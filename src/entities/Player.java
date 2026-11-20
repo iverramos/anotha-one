@@ -45,6 +45,8 @@ public final class Player extends Entity {
     private double dashGhostTimer;
 
     // Jump mechanics
+    private static final int MAX_JUMPS = 2; // 1 ground jump + 1 air jump
+    private int jumpsRemaining = MAX_JUMPS;
     private double coyoteTimer;
     private double jumpBufferTimer;
     private boolean droppingThroughPlatform;
