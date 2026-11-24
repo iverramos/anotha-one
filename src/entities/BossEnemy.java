@@ -16,22 +16,25 @@ import java.util.List;
 /**
  * Dungeon Floor Boss: "BELIAL - Demon Warden of B1F"
  * Multi-pattern boss battle featuring:
- * 1. Executioner's Cleave rush
- * 2. Leaping Ground Slam with dual floor shockwaves & screen shake
- * 3. 12-way Hellfire bullet ring
- * 4. Phase 2 enrage & minion summon
+ * 1. Executioner's Cleave rush with telegraphed windup
+ * 2. Leaping Ground Slam with dual floor shockwaves + upward fireball arc
+ * 3. 16-way Hellfire bullet ring
+ * 4. Aimed 3-round Hellfire burst
+ * 5. Phase 2 enrage & summon
  */
 public final class BossEnemy extends Enemy {
     public static final String BOSS_NAME = "BELIAL - DEMON WARDEN";
 
     private double stateTimer;
-    private int attackPattern = 0; // 0: Idle/Approach, 1: Cleave Windup, 2: Leap Slam, 3: Hellfire Burst
+    private int attackPattern = 0; // 0: Idle/Approach, 1: Cleave Windup, 2: Leap Slam, 3: Hellfire Ring, 4: Aimed Burst
     private boolean phase2Triggered;
     private final Renderer renderer;
     private int currentAnimFrame = 0;
+    private int burstShotsLeft = 0;
+    private double burstTimer = 0;
 
     public BossEnemy(SpriteManager sprites, Renderer renderer, double x, double y) {
-        super(sprites, x, y, 36, 42, 400, 22, 100);
+        super(sprites, x, y, 36, 42, 420, 22, 100);
         this.renderer = renderer;
         this.stateTimer = 2.0;
     }
@@ -50,7 +53,7 @@ public final class BossEnemy extends Enemy {
             vy += 680 * dt;
         }
 
-        // Phase 2 Enrage Trigger
+        // Phase 2 Enrage Trigger at 50% HP
         if (!phase2Triggered && health <= maxHealth / 2) {
             phase2Triggered = true;
             SoundManager.play(SoundManager.Sound.BOSS_ROAR);
@@ -60,40 +63,52 @@ public final class BossEnemy extends Enemy {
             }
         }
 
-        double patternCooldown = phase2Triggered ? 1.4 : 2.2;
+        double patternCooldown = phase2Triggered ? 1.3 : 2.0;
 
         if (attackPattern == 0) {
             // Idle & Stalking
             currentAnimFrame = ((int) animTimer) % 2;
-            double speed = phase2Triggered ? 60.0 : 40.0;
+            double speed = phase2Triggered ? 65.0 : 45.0;
             vx = (facingRight ? 1 : -1) * speed;
 
             if (stateTimer <= 0) {
-                // Select next attack pattern
-                attackPattern = (int) (Math.random() * 3) + 1;
-                stateTimer = (attackPattern == 2) ? 1.6 : (attackPattern == 1) ? 1.1 : 1.3;
+                // Select next attack pattern (1 to 4)
+                attackPattern = (int) (Math.random() * 4) + 1;
+
                 if (attackPattern == 1) {
-                    currentAnimFrame = 2; // Windup
+                    // Cleave Windup (Telegraphed!)
+                    stateTimer = 1.2;
+                    currentAnimFrame = 2;
                     SoundManager.play(SoundManager.Sound.SLASH);
+                    particles.add(Particle.createImpact(sprites, getCenterX(), getCenterY(), Particle.Type.SPARK));
                 } else if (attackPattern == 2) {
                     // Leap into air
-                    vy = -280;
-                    vx = (facingRight ? 1 : -1) * 90;
+                    stateTimer = 1.6;
+                    vy = -290;
+                    vx = (facingRight ? 1 : -1) * 95;
                     onGround = false;
                     currentAnimFrame = 2;
+                    SoundManager.play(SoundManager.Sound.JUMP);
                 } else if (attackPattern == 3) {
                     // Hellfire Ring
+                    stateTimer = 1.3;
                     currentAnimFrame = 3;
                     SoundManager.play(SoundManager.Sound.BOSS_ROAR);
+                } else if (attackPattern == 4) {
+                    // Aimed 3-Round Burst
+                    stateTimer = 1.2;
+                    currentAnimFrame = 3;
+                    burstShotsLeft = 3;
+                    burstTimer = 0.15;
+                    SoundManager.play(SoundManager.Sound.MAGIC_CAST);
                 }
             }
         } else if (attackPattern == 1) {
             // Cleave Rush
             currentAnimFrame = 2;
-            vx = (facingRight ? 1 : -1) * 160.0;
-            if (stateTimer <= 0.3 && stateTimer > 0.1) {
+            vx = (facingRight ? 1 : -1) * 170.0;
+            if (stateTimer <= 0.35 && stateTimer > 0.1) {
                 currentAnimFrame = 3;
-                // Giant slash
                 particles.add(Particle.createSlash(sprites, getCenterX() + (facingRight ? 28 : -28),
                         getCenterY(), facingRight ? 0 : Math.PI));
             }
@@ -109,8 +124,15 @@ public final class BossEnemy extends Enemy {
                 SoundManager.play(SoundManager.Sound.EXPLOSION);
 
                 // Twin shockwaves traveling left and right
-                particles.add(Particle.createShockwave(sprites, getCenterX() + 16, y + height - 4, 180));
-                particles.add(Particle.createShockwave(sprites, getCenterX() - 16, y + height - 4, -180));
+                particles.add(Particle.createShockwave(sprites, getCenterX() + 16, y + height - 4, 190));
+                particles.add(Particle.createShockwave(sprites, getCenterX() - 16, y + height - 4, -190));
+
+                // 3 upward erupting fireballs to punish standing close
+                for (int i = 0; i < 3; i++) {
+                    double angle = -Math.PI / 4 - (Math.PI / 2) * (i / 2.0);
+                    projectiles.add(new Projectile(sprites, getCenterX(), y + height - 8, angle, 140.0,
+                            Projectile.Type.FIREBALL, Projectile.Owner.ENEMY, 15));
+                }
 
                 attackPattern = 0;
                 stateTimer = patternCooldown;
@@ -119,13 +141,30 @@ public final class BossEnemy extends Enemy {
             // Hellfire radial bullet burst
             currentAnimFrame = 3;
             vx = 0;
-            if (stateTimer <= 0.6 && stateTimer > 0.4) {
-                int bullets = phase2Triggered ? 14 : 10;
+            if (stateTimer <= 0.65 && stateTimer > 0.45) {
+                int bullets = phase2Triggered ? 16 : 12;
                 for (int i = 0; i < bullets; i++) {
                     double angle = (Math.PI * 2 / bullets) * i;
-                    projectiles.add(new Projectile(sprites, getCenterX(), getCenterY(), angle, 120.0,
+                    projectiles.add(new Projectile(sprites, getCenterX(), getCenterY(), angle, 125.0,
                             Projectile.Type.FIREBALL, Projectile.Owner.ENEMY, 16));
                 }
+            }
+            if (stateTimer <= 0) {
+                attackPattern = 0;
+                stateTimer = patternCooldown;
+            }
+        } else if (attackPattern == 4) {
+            // Aimed burst
+            vx = 0;
+            currentAnimFrame = 3;
+            burstTimer -= dt;
+            if (burstTimer <= 0 && burstShotsLeft > 0) {
+                burstTimer = 0.22;
+                burstShotsLeft--;
+                double angle = Math.atan2(dy, dx);
+                projectiles.add(new Projectile(sprites, getCenterX(), getCenterY(), angle, 150.0,
+                        Projectile.Type.FIREBALL, Projectile.Owner.ENEMY, 14));
+                SoundManager.play(SoundManager.Sound.MAGIC_CAST);
             }
             if (stateTimer <= 0) {
                 attackPattern = 0;

@@ -9,12 +9,17 @@ import entities.Particle;
 import entities.Pickup;
 import entities.Player;
 import entities.Projectile;
+import entities.Tier2BossEnemy;
 import input.InputHandler;
 import input.InputHandler.Action;
 import rendering.Renderer;
 import rendering.SpriteManager;
+import ui.CreditsScreen;
 import ui.FoodMenu;
 import ui.HUD;
+import ui.SettingsMenu;
+import ui.TitleScreen;
+import ui.WeaponShop;
 import utilities.Constants;
 import world.Dungeon;
 import world.Room;
@@ -30,10 +35,14 @@ import java.util.List;
 
 /**
  * Top-level Game State orchestrating the Dungreed-style dungeon crawler.
- * Manages player, dungeon rooms, 360-aim combat, enemies, boss encounters,
- * food buffs, floating damage numbers, and camera lerp.
+ * Manages Title screen, Settings, Credits, Player combat, Dungeon Tiers 1 & 2,
+ * Boss encounters, Weapon Shop, and Audio synthesis.
  */
 public final class Game {
+    public enum GameState {
+        TITLE, SETTINGS, CREDITS, PLAYING
+    }
+
     private static final Font FONT_TITLE = new Font(Font.SANS_SERIF, Font.BOLD, 16);
     private static final Font FONT_BODY  = new Font(Font.SANS_SERIF, Font.BOLD, 10);
     private static final Font FONT_SMALL = new Font(Font.SANS_SERIF, Font.PLAIN, 8);
@@ -43,6 +52,13 @@ public final class Game {
     private final Renderer renderer;
     private final HUD hud;
     private final FoodMenu foodMenu;
+    private final WeaponShop weaponShop;
+    private final TitleScreen titleScreen;
+    private final SettingsMenu settingsMenu;
+    private final CreditsScreen creditsScreen;
+
+    private GameState state = GameState.TITLE;
+    private GameState returnState = GameState.TITLE;
 
     private Dungeon dungeon;
     private Player player;
@@ -54,15 +70,11 @@ public final class Game {
     private double camX, camY;
     private boolean paused;
     private boolean victory;
+    private boolean tier1Clear;
     private volatile int fps;
 
     public Game(InputHandler input, SpriteManager sprites) {
-        this.input = input;
-        this.sprites = sprites;
-        this.renderer = new Renderer();
-        this.hud = new HUD(sprites);
-        this.foodMenu = new FoodMenu(sprites);
-        initGame();
+        this(input, sprites, new Renderer());
     }
 
     public Game(InputHandler input, SpriteManager sprites, Renderer renderer) {
@@ -71,11 +83,18 @@ public final class Game {
         this.renderer = renderer;
         this.hud = new HUD(sprites);
         this.foodMenu = new FoodMenu(sprites);
+        this.weaponShop = new WeaponShop(sprites);
+        this.titleScreen = new TitleScreen();
+        this.settingsMenu = new SettingsMenu();
+        this.creditsScreen = new CreditsScreen();
+
+        SoundManager.init();
         initGame();
+        this.state = GameState.TITLE;
     }
 
     private void initGame() {
-        dungeon = new Dungeon(sprites, renderer);
+        dungeon = new Dungeon(sprites, renderer, 1);
         player = new Player(sprites, 4 * Constants.TILE, 12 * Constants.TILE);
         projectiles.clear();
         particles.clear();
@@ -85,6 +104,19 @@ public final class Game {
         camY = 0;
         paused = false;
         victory = false;
+        tier1Clear = false;
+    }
+
+    private void descendToTier2() {
+        dungeon = new Dungeon(sprites, renderer, 2);
+        projectiles.clear();
+        particles.clear();
+        pickups.clear();
+        damageNumbers.clear();
+        tier1Clear = false;
+        Room nextRoom = dungeon.getCurrentRoom();
+        player.setPosition(4 * Constants.TILE, (nextRoom.getMap().getRows() - 4) * Constants.TILE);
+        SoundManager.play(SoundManager.Sound.ROOM_CLEAR);
     }
 
     public void setFps(int fps) { this.fps = fps; }
@@ -93,9 +125,94 @@ public final class Game {
     public void update(double dt) {
         input.poll();
 
-        // Restart on R / Enter when dead or victorious
+        // -------------------------------------------------------------
+        // State Machine Handling
+        // -------------------------------------------------------------
+        if (state == GameState.TITLE) {
+            titleScreen.update(dt);
+            TitleScreen.Action act = titleScreen.handleInput(
+                    input.wasPressed(Action.UP) || input.wasPressed(Action.SLOT_1),
+                    input.wasPressed(Action.DOWN) || input.wasPressed(Action.SLOT_2),
+                    input.wasPressed(Action.JUMP) || input.wasPressed(Action.RESTART),
+                    input.getMouseX(), input.getMouseY(), input.wasLeftPressed()
+            );
+
+            if (act == TitleScreen.Action.PLAY) {
+                initGame();
+                state = GameState.PLAYING;
+            } else if (act == TitleScreen.Action.SETTINGS) {
+                returnState = GameState.TITLE;
+                state = GameState.SETTINGS;
+            } else if (act == TitleScreen.Action.CREDITS) {
+                state = GameState.CREDITS;
+            } else if (act == TitleScreen.Action.EXIT) {
+                System.exit(0);
+            }
+            return;
+        }
+
+        if (state == GameState.SETTINGS) {
+            settingsMenu.update();
+            boolean close = settingsMenu.handleInput(
+                    input.wasPressed(Action.UP),
+                    input.wasPressed(Action.DOWN),
+                    input.wasPressed(Action.LEFT),
+                    input.wasPressed(Action.RIGHT),
+                    input.wasPressed(Action.JUMP) || input.wasPressed(Action.RESTART),
+                    input.wasPressed(Action.PAUSE),
+                    input.getMouseX(), input.getMouseY(),
+                    input.isLeftDown(), input.wasLeftPressed(), input.wasLeftPressed()
+            );
+            if (close) {
+                state = returnState;
+            }
+            return;
+        }
+
+        if (state == GameState.CREDITS) {
+            creditsScreen.update(dt);
+            boolean close = creditsScreen.handleInput(
+                    input.wasPressed(Action.JUMP) || input.wasPressed(Action.RESTART),
+                    input.wasPressed(Action.PAUSE),
+                    input.getMouseX(), input.getMouseY(),
+                    input.wasLeftPressed()
+            );
+            if (close) {
+                state = GameState.TITLE;
+            }
+            return;
+        }
+
+        // -------------------------------------------------------------
+        // Playing State
+        // -------------------------------------------------------------
+        // Restart / Return to Title on R / Enter when dead or victorious
         if ((player.isDead() || victory) && input.wasPressed(Action.RESTART)) {
             initGame();
+            state = GameState.TITLE;
+            return;
+        }
+
+        // Tier 1 descent trigger
+        if (tier1Clear) {
+            if (input.wasPressed(Action.INTERACT) || input.wasPressed(Action.RESTART)) {
+                descendToTier2();
+                return;
+            }
+        }
+
+        // Weapon Shop interaction
+        if (weaponShop.isOpen()) {
+            weaponShop.handleInput(
+                    input.wasPressed(Action.UP),
+                    input.wasPressed(Action.DOWN),
+                    input.wasPressed(Action.LEFT),
+                    input.wasPressed(Action.RIGHT),
+                    input.wasPressed(Action.INTERACT) || input.wasPressed(Action.RESTART),
+                    input.wasPressed(Action.PAUSE) || input.wasPressed(Action.SHOP),
+                    input.getMouseX(), input.getMouseY(), input.wasLeftPressed(),
+                    player
+            );
             return;
         }
 
@@ -121,11 +238,25 @@ public final class Game {
             return;
         }
 
-        // Pause
+        // Toggle Weapon Shop via [B]
+        if (input.wasPressed(Action.SHOP)) {
+            weaponShop.toggle();
+            return;
+        }
+
+        // Pause & in-game Settings
         if (input.wasPressed(Action.PAUSE)) {
             paused = !paused;
+            SoundManager.play(SoundManager.Sound.UI_CLICK);
         }
-        if (paused || player.isDead() || victory) return;
+        if (paused) {
+            if (input.wasPressed(Action.SHOP)) { // 'B' or 'S' in pause menu
+                returnState = GameState.PLAYING;
+                state = GameState.SETTINGS;
+            }
+            return;
+        }
+        if (player.isDead() || victory) return;
 
         renderer.updateShake(dt);
 
@@ -165,11 +296,13 @@ public final class Game {
 
         map.resolveCollisions(player, dt, player.isDroppingThroughPlatform());
 
-        // Hazard spike check for player
+        // Hazard spike check for player (respects i-frames)
         if (map.checkHazard(player.getBounds())) {
-            player.takeDamage(15);
-            player.setVelocity(player.getVx() * 0.5, -220);
-            damageNumbers.add(new DamageNumber(player.getCenterX(), player.getY() - 4, "-15", Color.RED, false));
+            if (!player.isInvulnerable()) {
+                player.takeDamage(15);
+                player.setVelocity(player.getVx() * 0.5, -220);
+                damageNumbers.add(new DamageNumber(player.getCenterX(), player.getY() - 4, "-15", Color.RED, false));
+            }
         }
 
         // Player attack
@@ -185,7 +318,11 @@ public final class Game {
                 pickups.addAll(e.spawnDeathLoot());
                 enemyIter.remove();
                 if (e instanceof BossEnemy) {
+                    tier1Clear = true;
+                    SoundManager.play(SoundManager.Sound.ROOM_CLEAR);
+                } else if (e instanceof Tier2BossEnemy) {
                     victory = true;
+                    SoundManager.play(SoundManager.Sound.ROOM_CLEAR);
                 }
                 continue;
             }
@@ -237,8 +374,8 @@ public final class Game {
                     }
                 }
             } else {
-                // Enemy projectile vs Player
-                if (!player.isDashing() && player.getBounds().intersects(pBox)) {
+                // Enemy projectile vs Player (respects i-frames and dash)
+                if (!player.isInvulnerable() && player.getBounds().intersects(pBox)) {
                     player.takeDamage(p.getDamage());
                     damageNumbers.add(new DamageNumber(player.getCenterX(), player.getY() - 4,
                             "-" + p.getDamage(), Color.RED, false));
@@ -305,6 +442,10 @@ public final class Game {
                 player.setPosition((nextRoom.getMap().getCols() - 4) * Constants.TILE, (nextRoom.getMap().getRows() - 4) * Constants.TILE);
             }
         } else if (currentRoom.isRightDoorOpen() && player.getBounds().intersects(currentRoom.getRightDoorBounds())) {
+            if (dungeon.getTier() == 1 && currentRoom.getType() == Room.Type.BOSS && tier1Clear) {
+                descendToTier2();
+                return;
+            }
             int nextIdx = dungeon.getCurrentRoomIndex() + 1;
             if (nextIdx < dungeon.getRoomCount()) {
                 dungeon.moveToRoom(nextIdx);
@@ -333,6 +474,21 @@ public final class Game {
         // Deep background
         g.setColor(new Color(0x0e1017));
         g.fillRect(0, 0, Constants.VIEW_W, Constants.VIEW_H);
+
+        if (state == GameState.TITLE) {
+            titleScreen.render(g);
+            return;
+        }
+
+        if (state == GameState.SETTINGS) {
+            settingsMenu.render(g);
+            return;
+        }
+
+        if (state == GameState.CREDITS) {
+            creditsScreen.render(g, input.getMouseX(), input.getMouseY());
+            return;
+        }
 
         int renderCamX = (int) Math.round(camX) + renderer.getShakeOffsetX();
         int renderCamY = (int) Math.round(camY) + renderer.getShakeOffsetY();
@@ -363,20 +519,28 @@ public final class Game {
         // 8. HUD & Crosshair
         hud.render(g, player, dungeon, input.getMouseX(), input.getMouseY());
 
-        // 9. Food Menu
+        // 9. Food Menu & Weapon Shop
         foodMenu.render(g, player);
+        weaponShop.render(g, player);
 
-        // 10. Room Title Banner (Top Left)
+        // 10. Room Title Banner & Shop Prompt
         g.setFont(FONT_SMALL);
         text(g, room.getTitle() + "  |  FPS " + fps, 8, Constants.VIEW_H - 4, new Color(0x656f8f));
 
-        // Overlays: Paused / Game Over / Victory
+        if (room.getType() == Room.Type.FOOD_SHOP && !foodMenu.isOpen() && !weaponShop.isOpen()) {
+            g.setFont(FONT_SMALL);
+            text(g, "[E] Han's Diner   |   [B] Weapon Armory", Constants.VIEW_W / 2 - 75, Constants.VIEW_H - 4, new Color(0xfabc2a));
+        }
+
+        // Overlays: Paused / Game Over / Tier 1 Cleared / Victory
         if (paused) {
-            drawOverlay(g, "PAUSED", "Press ESC to resume", new Color(0xfabc2a));
+            drawOverlay(g, "PAUSED", "Press ESC to resume   |   [B] Audio Settings", new Color(0xfabc2a));
         } else if (player.isDead()) {
-            drawOverlay(g, "YOU DIED", "Press [R] to re-enter the dungeon", new Color(0xe62e3d));
+            drawOverlay(g, "YOU DIED", "Press [R] to return to Title", new Color(0xe62e3d));
+        } else if (tier1Clear) {
+            drawOverlay(g, "★ TIER 1 CLEARED! ★", "Belial has fallen! Press [E] or [ENTER] to descend to B2F", new Color(0x38d7f2));
         } else if (victory) {
-            drawOverlay(g, "VICTORY ACHIEVED!", "The Demon Warden has fallen! Press [R] to run again", new Color(0xfabc2a));
+            drawOverlay(g, "VICTORY ACHIEVED!", "The Void Archon has fallen! The Depths are Cleansed! Press [R] for Title", new Color(0xfabc2a));
         }
     }
 

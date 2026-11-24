@@ -611,12 +611,13 @@ public final class AssetGenerator {
     }
 
     // =========================================================================
-    // 6. WEAPONS (120x24, 5 weapons of 24x24)
+    // 6. WEAPONS (216x24, 9 weapons of 24x24)
     // 0: Iron Shortsword, 1: Titan Greatsword, 2: Royal Bow,
-    // 3: Flintlock Revolver, 4: Staff of Embers
+    // 3: Flintlock Revolver, 4: Staff of Embers, 5: Shadow Daggers,
+    // 6: Heavy Crossbow, 7: Glacial Wand, 8: Thunder Halberd
     // =========================================================================
     static BufferedImage buildWeapons() {
-        BufferedImage im = new BufferedImage(120, 24, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage im = new BufferedImage(216, 24, BufferedImage.TYPE_INT_ARGB);
 
         // Weapon 0: Iron Shortsword (diagonal 45 deg)
         int ox0 = 0;
@@ -708,6 +709,72 @@ public final class AssetGenerator {
         im.setRGB(ox4 + 15, 6, GOLD_MID);
         im.setRGB(ox4 + 21, 6, GOLD_MID);
         im.setRGB(ox4 + 18, 3, GOLD_HI);
+
+        // Weapon 5: Shadow Daggers (crossed dual obsidian blades with violet runes)
+        int ox5 = 120;
+        // Dagger 1 (main)
+        for (int i = 0; i < 8; i++) {
+            im.setRGB(ox5 + 6 + i, 16 - i, PURPLE_DARK);
+            im.setRGB(ox5 + 7 + i, 16 - i, PURPLE_LIGHT);
+            im.setRGB(ox5 + 7 + i, 15 - i, PURPLE_HI);
+        }
+        im.setRGB(ox5 + 15, 7, PURE_WHITE);
+        // Dagger 2 (crossing)
+        for (int i = 0; i < 6; i++) {
+            im.setRGB(ox5 + 7 + i, 9 + i, PURPLE_DARK);
+            im.setRGB(ox5 + 8 + i, 9 + i, PURPLE_MID);
+        }
+        im.setRGB(ox5 + 5, 18, GOLD_HI);
+        im.setRGB(ox5 + 14, 16, GOLD_HI);
+
+        // Weapon 6: Heavy Crossbow
+        int ox6 = 144;
+        // Wooden stock
+        fillRect(im, ox6 + 4, 12, 14, 3, WOOD_MID);
+        fillRect(im, ox6 + 4, 13, 14, 1, WOOD_DARK);
+        // Metal prod / bow crossbar
+        for (int y = 5; y <= 20; y++) {
+            im.setRGB(ox6 + 14, y, STEEL_MID);
+            im.setRGB(ox6 + 15, y, STEEL_LIGHT);
+        }
+        im.setRGB(ox6 + 13, 5, STEEL_HI);
+        im.setRGB(ox6 + 13, 20, STEEL_HI);
+        // Heavy bolt loaded
+        for (int x = 7; x <= 17; x++) im.setRGB(ox6 + x, 11, STEEL_HI);
+        im.setRGB(ox6 + 18, 11, GOLD_HI);
+
+        // Weapon 7: Glacial Wand
+        int ox7 = 168;
+        // Crystal handle
+        for (int i = 0; i < 12; i++) {
+            im.setRGB(ox7 + 5 + i, 18 - i, CYAN_DARK);
+            im.setRGB(ox7 + 6 + i, 18 - i, CYAN_MID);
+        }
+        // Jagged Ice Crystal Head
+        fillRect(im, ox7 + 15, 3, 6, 6, CYAN_LIGHT);
+        fillRect(im, ox7 + 16, 4, 4, 4, CYAN_HI);
+        im.setRGB(ox7 + 18, 5, PURE_WHITE);
+        im.setRGB(ox7 + 14, 2, CYAN_HI);
+        im.setRGB(ox7 + 21, 8, CYAN_HI);
+
+        // Weapon 8: Thunder Halberd
+        int ox8 = 192;
+        // Long dark shaft
+        for (int i = 0; i < 16; i++) {
+            im.setRGB(ox8 + 3 + i, 20 - i, STEEL_DARK);
+            im.setRGB(ox8 + 4 + i, 20 - i, STEEL_MID);
+        }
+        // Gold socket & crossbar
+        fillRect(im, ox8 + 14, 6, 4, 3, GOLD_MID);
+        im.setRGB(ox8 + 15, 5, GOLD_HI);
+        // Halberd axe blade + spearhead
+        for (int i = 0; i < 5; i++) {
+            im.setRGB(ox8 + 18 + i, 4 - i, STEEL_HI);
+            im.setRGB(ox8 + 15 + i, 3, GOLD_HI);
+            im.setRGB(ox8 + 14, 3 - i, STEEL_LIGHT);
+        }
+        im.setRGB(ox8 + 17, 2, PURE_WHITE); // spear tip
+        im.setRGB(ox8 + 13, 2, CYAN_HI); // electric spark
 
         return im;
     }

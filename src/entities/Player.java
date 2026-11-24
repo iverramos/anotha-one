@@ -13,12 +13,14 @@ import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Hero character implementing Dungreed's signature mechanics:
  * 360-degree mouse aiming, double dash with i-frames and ghost trails,
- * variable jump, platform drop-down, primary/secondary weapon loadout,
+ * ground and airborne double-jump, platform drop-down, primary/secondary weapon loadout,
  * and food fullness / stat scaling.
  */
 public final class Player extends Entity {
@@ -27,25 +29,25 @@ public final class Player extends Entity {
     private final SpriteManager sprites;
 
     // Movement tuning
-    private static final double MOVE_SPEED = 140.0;
-    private static final double JUMP_FORCE = -270.0;
+    private static final double MOVE_SPEED = 145.0;
+    private static final double JUMP_FORCE = -275.0;
     private static final double GRAVITY = 750.0;
     private static final double MAX_FALL = 360.0;
 
-    // Dash
+    // Dash (Dodge)
     public static final int MAX_DASHES = 2;
     private int dashCharges = MAX_DASHES;
     private double dashRechargeTimer;
-    private static final double DASH_RECHARGE_TIME = 1.1;
+    private static final double DASH_RECHARGE_TIME = 1.0;
     private boolean dashing;
     private double dashTimer;
     private static final double DASH_DURATION = 0.16;
-    private static final double DASH_SPEED = 420.0;
+    private static final double DASH_SPEED = 430.0;
     private double dashVx, dashVy;
     private double dashGhostTimer;
 
-    // Jump mechanics
-    private static final int MAX_JUMPS = 2; // 1 ground jump + 1 air jump
+    // Jump mechanics (Ground jump + 1 Air Double-Jump)
+    private static final int MAX_JUMPS = 2;
     private int jumpsRemaining = MAX_JUMPS;
     private double coyoteTimer;
     private double jumpBufferTimer;
@@ -53,6 +55,7 @@ public final class Player extends Entity {
 
     // Weapons & Inventory
     private final List<Weapon> weapons = new ArrayList<>();
+    private final Set<Integer> ownedWeaponIds = new HashSet<>();
     private int activeWeaponIndex = 0;
     private double aimAngle;
     private boolean facingRight = true;
@@ -76,6 +79,8 @@ public final class Player extends Entity {
         // Starting weapons: Iron Shortsword + Royal Bow
         weapons.add(Weapon.createShortsword());
         weapons.add(Weapon.createBow());
+        ownedWeaponIds.add(0);
+        ownedWeaponIds.add(2);
     }
 
     public void update(double dt, boolean left, boolean right, boolean jumpDown, boolean jumpPressed,
@@ -105,7 +110,7 @@ public final class Player extends Entity {
         // Platform drop-down
         droppingThroughPlatform = downPressed;
 
-        // Trigger Dash
+        // Trigger Dash (Dodge)
         if (dashPressed && dashCharges > 0 && !dashing) {
             dashCharges--;
             dashing = true;
@@ -139,7 +144,7 @@ public final class Player extends Entity {
             Rectangle dashBox = getBounds();
             for (Enemy e : enemies) {
                 if (!e.isDead() && e.getBounds().intersects(dashBox) && e.getHitFlashTimer() <= 0) {
-                    int dmg = 20 + bonusAttack;
+                    int dmg = 22 + bonusAttack;
                     e.takeDamage(dmg);
                     e.applyKnockback(dashVx * 0.5, -60);
                     SoundManager.play(SoundManager.Sound.HIT);
@@ -154,14 +159,15 @@ public final class Player extends Entity {
                 vy *= 0.5;
             }
         } else {
-            // Standard horizontal movement
+            // Standard horizontal movement with high-responsiveness air control
             double speed = (MOVE_SPEED * (1.0 + bonusSpeed));
             int dir = (right ? 1 : 0) - (left ? 1 : 0);
             vx = dir * speed;
 
-            // Coyote time & Jump buffer
+            // Ground check & reset jumps
             if (onGround) {
                 coyoteTimer = 0.10;
+                jumpsRemaining = MAX_JUMPS;
             } else {
                 coyoteTimer -= dt;
             }
@@ -172,13 +178,28 @@ public final class Player extends Entity {
                 jumpBufferTimer -= dt;
             }
 
+            // 1. Ground / Coyote Jump
             if (jumpBufferTimer > 0 && coyoteTimer > 0) {
                 vy = JUMP_FORCE;
                 jumpBufferTimer = 0;
                 coyoteTimer = 0;
                 onGround = false;
+                jumpsRemaining = MAX_JUMPS - 1;
                 SoundManager.play(SoundManager.Sound.JUMP);
                 particles.add(Particle.createDust(sprites, x + width / 2.0, y + height));
+            }
+            // 2. Air Double-Jump
+            else if (jumpPressed && jumpsRemaining > 0 && coyoteTimer <= 0) {
+                jumpsRemaining--;
+                vy = JUMP_FORCE * 0.95;
+                onGround = false;
+                SoundManager.play(SoundManager.Sound.DOUBLE_JUMP);
+
+                // Double jump visual cue: particle puff at feet
+                particles.add(Particle.createDust(sprites, x + width / 2.0, y + height));
+                for (int p = 0; p < 4; p++) {
+                    particles.add(Particle.createImpact(sprites, x + width / 2.0, y + height, Particle.Type.SPARK));
+                }
             }
 
             // Variable jump height
@@ -221,6 +242,12 @@ public final class Player extends Entity {
             double slashY = pCenterY + Math.sin(aimAngle) * slashDist;
             particles.add(Particle.createSlash(sprites, slashX, slashY, aimAngle));
 
+            if (w.getId() == 8) { // Thunder Halberd sparks
+                for (int k = 0; k < 3; k++) {
+                    particles.add(Particle.createImpact(sprites, slashX, slashY, Particle.Type.SPARK));
+                }
+            }
+
             // Melee hit detection cone
             for (Enemy e : enemies) {
                 if (e.isDead()) continue;
@@ -249,6 +276,11 @@ public final class Player extends Entity {
                 SoundManager.play(SoundManager.Sound.BOW_SHOOT);
                 projectiles.add(new Projectile(sprites, pCenterX, pCenterY, aimAngle, w.getProjSpeed(),
                         Projectile.Type.ARROW, Projectile.Owner.PLAYER, totalDamage));
+            } else if (w.getId() == 6) {
+                // Heavy Crossbow
+                SoundManager.play(SoundManager.Sound.BOW_SHOOT);
+                projectiles.add(new Projectile(sprites, pCenterX, pCenterY, aimAngle, w.getProjSpeed(),
+                        Projectile.Type.ARROW, Projectile.Owner.PLAYER, totalDamage));
             } else {
                 // Flintlock Revolver
                 SoundManager.play(SoundManager.Sound.GUN_SHOOT);
@@ -256,10 +288,17 @@ public final class Player extends Entity {
                         Projectile.Type.BULLET, Projectile.Owner.PLAYER, totalDamage));
             }
         } else if (w.getType() == Weapon.Type.MAGIC) {
-            // Staff of Embers
             SoundManager.play(SoundManager.Sound.MAGIC_CAST);
-            projectiles.add(new Projectile(sprites, pCenterX, pCenterY, aimAngle, w.getProjSpeed(),
-                    Projectile.Type.FIREBALL, Projectile.Owner.PLAYER, totalDamage));
+            if (w.getId() == 7) {
+                // Glacial Wand
+                projectiles.add(new Projectile(sprites, pCenterX, pCenterY, aimAngle, w.getProjSpeed(),
+                        Projectile.Type.DARK_ORB, Projectile.Owner.PLAYER, totalDamage));
+                particles.add(Particle.createImpact(sprites, pCenterX, pCenterY, Particle.Type.SPARK));
+            } else {
+                // Staff of Embers
+                projectiles.add(new Projectile(sprites, pCenterX, pCenterY, aimAngle, w.getProjSpeed(),
+                        Projectile.Type.FIREBALL, Projectile.Owner.PLAYER, totalDamage));
+            }
         }
     }
 
@@ -277,9 +316,13 @@ public final class Player extends Entity {
         int rx = (int) Math.round(x - camX);
         int ry = (int) Math.round(y - camY);
 
-        // Flashing when invincible
-        if (iFrameTimer > 0 && ((int) (iFrameTimer * 20)) % 2 == 0) {
-            return;
+        // Visual blinking / flashing during invulnerability frames (0.85s window)
+        Composite oldComp = null;
+        if (iFrameTimer > 0) {
+            if (((int) (iFrameTimer * 24)) % 2 == 0) {
+                oldComp = g.getComposite();
+                g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.35f));
+            }
         }
 
         int frameIdx;
@@ -306,20 +349,23 @@ public final class Player extends Entity {
         if (!weapons.isEmpty() && !dashing) {
             Weapon w = weapons.get(activeWeaponIndex);
             BufferedImage[] wImgs = sprites.slice("characters/weapons.png", 24, 24);
-            if (w.getId() < wImgs.length) {
-                BufferedImage wImg = wImgs[w.getId()];
-                AffineTransform old = g.getTransform();
-                int weaponPivotX = rx + width / 2;
-                int weaponPivotY = ry + height / 2;
+            int wImgIdx = w.getId() < wImgs.length ? w.getId() : 0;
+            BufferedImage wImg = wImgs[wImgIdx];
+            AffineTransform oldTransform = g.getTransform();
+            int weaponPivotX = rx + width / 2;
+            int weaponPivotY = ry + height / 2;
 
-                g.translate(weaponPivotX, weaponPivotY);
-                g.rotate(aimAngle);
-                if (!facingRight) {
-                    g.scale(1, -1);
-                }
-                g.drawImage(wImg, 0, -12, null);
-                g.setTransform(old);
+            g.translate(weaponPivotX, weaponPivotY);
+            g.rotate(aimAngle);
+            if (!facingRight) {
+                g.scale(1, -1);
             }
+            g.drawImage(wImg, 0, -12, null);
+            g.setTransform(oldTransform);
+        }
+
+        if (oldComp != null) {
+            g.setComposite(oldComp);
         }
     }
 
@@ -332,8 +378,12 @@ public final class Player extends Entity {
     public void takeDamage(int amount) {
         if (dashing || iFrameTimer > 0 || dead) return;
         super.takeDamage(amount);
-        iFrameTimer = 0.65;
+        iFrameTimer = 0.85; // 0.85s invulnerability window
         SoundManager.play(SoundManager.Sound.PLAYER_HURT);
+    }
+
+    public boolean isInvulnerable() {
+        return dashing || iFrameTimer > 0;
     }
 
     public void switchWeapon(int delta) {
@@ -348,7 +398,7 @@ public final class Player extends Entity {
     }
 
     public void addWeapon(Weapon w) {
-        // Replace or append
+        unlockWeapon(w.getId());
         for (int i = 0; i < weapons.size(); i++) {
             if (weapons.get(i).getId() == w.getId()) {
                 weapons.set(i, w);
@@ -362,6 +412,34 @@ public final class Player extends Entity {
         } else {
             weapons.set(activeWeaponIndex, w);
         }
+    }
+
+    public void equipWeapon(Weapon w) {
+        unlockWeapon(w.getId());
+        for (int i = 0; i < weapons.size(); i++) {
+            if (weapons.get(i).getId() == w.getId()) {
+                activeWeaponIndex = i;
+                return;
+            }
+        }
+        if (weapons.size() < 3) {
+            weapons.add(w);
+            activeWeaponIndex = weapons.size() - 1;
+        } else {
+            weapons.set(activeWeaponIndex, w);
+        }
+    }
+
+    public boolean ownsWeapon(int weaponId) {
+        return ownedWeaponIds.contains(weaponId);
+    }
+
+    public void unlockWeapon(int weaponId) {
+        ownedWeaponIds.add(weaponId);
+    }
+
+    public Set<Integer> getOwnedWeaponIds() {
+        return ownedWeaponIds;
     }
 
     // Stat Buff Helpers
@@ -382,6 +460,7 @@ public final class Player extends Entity {
 
     public int getDashCharges() { return dashCharges; }
     public double getDashRechargeProgress() { return Math.min(1.0, dashRechargeTimer / DASH_RECHARGE_TIME); }
+    public int getJumpsRemaining() { return jumpsRemaining; }
     public boolean isDroppingThroughPlatform() { return droppingThroughPlatform; }
     public List<Weapon> getWeapons() { return weapons; }
     public int getActiveWeaponIndex() { return activeWeaponIndex; }

@@ -130,11 +130,16 @@ public final class HUD {
 
         // 6. Boss Health Bar (Top-Center in Boss Room)
         Room currentRoom = dungeon.getCurrentRoom();
-        if (currentRoom.getType() == Room.Type.BOSS) {
+        if (currentRoom.getType() == Room.Type.BOSS || currentRoom.getType() == Room.Type.TIER2_BOSS) {
             for (Enemy e : currentRoom.getEnemies()) {
-                if (e instanceof BossEnemy && !e.isDead()) {
-                    renderBossHealthBar(g, (BossEnemy) e);
-                    break;
+                if (!e.isDead()) {
+                    if (e instanceof BossEnemy) {
+                        renderBossHealthBar(g, BossEnemy.BOSS_NAME, e.getHealth(), e.getMaxHealth());
+                        break;
+                    } else if (e instanceof entities.Tier2BossEnemy) {
+                        renderBossHealthBar(g, entities.Tier2BossEnemy.BOSS_NAME, e.getHealth(), e.getMaxHealth());
+                        break;
+                    }
                 }
             }
         }
@@ -172,7 +177,7 @@ public final class HUD {
             Color rc;
             if (i == curIdx) {
                 rc = new Color(0x38d7f2); // Current: bright cyan
-            } else if (r.getType() == Room.Type.BOSS) {
+            } else if (r.getType() == Room.Type.BOSS || r.getType() == Room.Type.TIER2_BOSS) {
                 rc = new Color(0xe62e3d); // Boss: crimson
             } else if (r.getType() == Room.Type.TREASURE) {
                 rc = new Color(0xfabc2a); // Treasure: gold
@@ -189,7 +194,7 @@ public final class HUD {
         }
     }
 
-    private void renderBossHealthBar(Graphics2D g, BossEnemy boss) {
+    private void renderBossHealthBar(Graphics2D g, String bossName, int hp, int maxHp) {
         int barW = 220, barH = 12;
         int barX = (Constants.VIEW_W - barW) / 2;
         int barY = 14;
@@ -202,10 +207,10 @@ public final class HUD {
 
         // Boss Title
         g.setFont(FONT_SMALL);
-        text(g, "☠ " + BossEnemy.BOSS_NAME + " ☠", barX + 35, barY - 3, new Color(0xfabc2a));
+        text(g, "☠ " + bossName + " ☠", barX + 35, barY - 3, new Color(0xfabc2a));
 
         // Red Fill
-        double pct = Math.max(0, (double) boss.getHealth() / boss.getMaxHealth());
+        double pct = Math.max(0, (double) hp / maxHp);
         int fillW = (int) Math.round(barW * pct);
         g.setColor(new Color(0x2d3142));
         g.fillRect(barX, barY, barW, barH);
@@ -217,7 +222,7 @@ public final class HUD {
 
         // HP numeric
         g.setFont(FONT_TINY);
-        text(g, boss.getHealth() + " / " + boss.getMaxHealth(), barX + barW / 2 - 20, barY + 9, Color.WHITE);
+        text(g, hp + " / " + maxHp, barX + barW / 2 - 20, barY + 9, Color.WHITE);
     }
 
     private static void text(Graphics2D g, String s, int x, int y, Color c) {

@@ -14,7 +14,7 @@ import java.awt.event.MouseWheelEvent;
 public final class InputHandler extends MouseAdapter {
     public enum Action {
         LEFT, RIGHT, UP, DOWN, JUMP, ATTACK, DASH, INTERACT,
-        SWITCH_WEAPON, SLOT_1, SLOT_2, SLOT_3, PAUSE, RESTART
+        SWITCH_WEAPON, SLOT_1, SLOT_2, SLOT_3, PAUSE, RESTART, SHOP
     }
 
     private static final int N = Action.values().length;
@@ -78,6 +78,7 @@ public final class InputHandler extends MouseAdapter {
             case KeyEvent.VK_2:                         return Action.SLOT_2;
             case KeyEvent.VK_3:                         return Action.SLOT_3;
             case KeyEvent.VK_ESCAPE:                    return Action.PAUSE;
+            case KeyEvent.VK_B:                         return Action.SHOP;
             case KeyEvent.VK_R: case KeyEvent.VK_ENTER: return Action.RESTART;
             default:                                    return null;
         }

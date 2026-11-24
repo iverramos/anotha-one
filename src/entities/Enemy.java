@@ -38,7 +38,7 @@ public abstract class Enemy extends Entity {
     }
 
     public void checkContactPlayer(Player player, List<DamageNumber> damageNumbers) {
-        if (dead || player.isDead()) return;
+        if (dead || player.isDead() || player.isInvulnerable()) return;
         if (getBounds().intersects(player.getBounds())) {
             player.takeDamage(contactDamage);
             damageNumbers.add(new DamageNumber(player.getCenterX(), player.getY() - 4,
