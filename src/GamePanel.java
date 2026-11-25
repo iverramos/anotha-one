@@ -29,7 +29,7 @@ public final class GamePanel extends JPanel {
         this.renderer = renderer;
         this.input = input;
 
-        setPreferredSize(new Dimension(Constants.VIEW_W * Constants.DEFAULT_SCALE, Constants.VIEW_H * Constants.DEFAULT_SCALE));
+        setPreferredSize(new Dimension(Constants.WINDOW_W, Constants.WINDOW_H));
         setBackground(Color.BLACK);
         setOpaque(true);
         setDoubleBuffered(false);
@@ -75,7 +75,7 @@ public final class GamePanel extends JPanel {
             }
 
             private void updateMouse(MouseEvent e) {
-                Point p = Renderer.screenToGame(e.getX(), e.getY(), getWidth(), getHeight());
+                Point p = Renderer.screenToUi(e.getX(), e.getY(), getWidth(), getHeight());
                 input.updateMousePos(p.x, p.y);
             }
         };

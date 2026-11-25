@@ -81,24 +81,23 @@ public final class TileMap {
      */
     public void resolveCollisions(Entity e, double dt, boolean dropThrough) {
         int t = Constants.TILE;
+        final double eps = 0.001;
         double newX = e.getX() + e.getVx() * dt;
         double newY = e.getY() + e.getVy() * dt;
         int w = e.getWidth();
         int h = e.getHeight();
 
         // 1. Horizontal movement & collision
-        int leftCol = (int) Math.floor(newX / t);
-        int rightCol = (int) Math.floor((newX + w - 1) / t);
-        int topRow = (int) Math.floor(e.getY() / t);
-        int bottomRow = (int) Math.floor((e.getY() + h - 1) / t);
+        int leftCol = (int) Math.floor((newX + eps) / t);
+        int rightCol = (int) Math.floor((newX + w - eps) / t);
+        int topRow = (int) Math.floor((e.getY() + eps) / t);
+        int bottomRow = (int) Math.floor((e.getY() + h - eps) / t);
 
-        boolean collidedX = false;
         if (e.getVx() > 0) { // moving right
             for (int r = topRow; r <= bottomRow; r++) {
                 if (isSolid(getForeground(rightCol, r))) {
                     newX = rightCol * t - w;
                     e.setVelocity(0, e.getVy());
-                    collidedX = true;
                     break;
                 }
             }
@@ -107,7 +106,6 @@ public final class TileMap {
                 if (isSolid(getForeground(leftCol, r))) {
                     newX = (leftCol + 1) * t;
                     e.setVelocity(0, e.getVy());
-                    collidedX = true;
                     break;
                 }
             }
@@ -115,13 +113,13 @@ public final class TileMap {
         e.setPosition(newX, e.getY());
 
         // 2. Vertical movement & collision
-        leftCol = (int) Math.floor(e.getX() / t);
-        rightCol = (int) Math.floor((e.getX() + w - 1) / t);
-        topRow = (int) Math.floor(newY / t);
-        bottomRow = (int) Math.floor((newY + h - 1) / t);
+        leftCol = (int) Math.floor((e.getX() + eps) / t);
+        rightCol = (int) Math.floor((e.getX() + w - eps) / t);
+        topRow = (int) Math.floor((newY + eps) / t);
+        bottomRow = (int) Math.floor((newY + h - eps) / t);
 
         boolean ground = false;
-        if (e.getVy() > 0) { // falling
+        if (e.getVy() >= 0) { // falling or resting on surface
             for (int c = leftCol; c <= rightCol; c++) {
                 int tile = getForeground(c, bottomRow);
                 if (isSolid(tile)) {
@@ -141,7 +139,23 @@ public final class TileMap {
                     }
                 }
             }
-        } else if (e.getVy() < 0) { // jumping up
+            // Ground support probe when velocity was already zeroed
+            if (!ground) {
+                int supportRow = (int) Math.floor((newY + h + 0.02) / t);
+                double surfaceY = supportRow * t;
+                if (Math.abs((newY + h) - surfaceY) <= 0.05) {
+                    for (int c = leftCol; c <= rightCol; c++) {
+                        int tile = getForeground(c, supportRow);
+                        if (isSolid(tile) || (isOneWayPlatform(tile) && !dropThrough)) {
+                            newY = surfaceY - h;
+                            e.setVelocity(e.getVx(), 0);
+                            ground = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        } else { // jumping up (vy < 0)
             for (int c = leftCol; c <= rightCol; c++) {
                 if (isSolid(getForeground(c, topRow))) {
                     newY = (topRow + 1) * t;

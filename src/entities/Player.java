@@ -62,7 +62,9 @@ public final class Player extends Entity {
 
     // Stats & Food
     private int gold = 0;
-    private int fullness = 0;
+    private int fullness = 30;
+    private double displayFullness = 30.0;
+    private double fullnessDrainFlashTimer = 0;
     private int bonusAttack = 0;
     private double bonusSpeed = 0;
     private double bonusCrit = 0.05; // 5% base crit
@@ -96,6 +98,14 @@ public final class Player extends Entity {
         // Timers
         if (hitFlashTimer > 0) hitFlashTimer -= dt;
         if (iFrameTimer > 0) iFrameTimer -= dt;
+        if (fullnessDrainFlashTimer > 0) fullnessDrainFlashTimer = Math.max(0, fullnessDrainFlashTimer - dt);
+        if (Math.abs(displayFullness - fullness) > 0.1) {
+            double rate = 45.0 * dt;
+            if (displayFullness > fullness) displayFullness = Math.max(fullness, displayFullness - rate);
+            else displayFullness = Math.min(fullness, displayFullness + rate);
+        } else {
+            displayFullness = fullness;
+        }
         for (Weapon w : weapons) w.update(dt);
 
         // Dash Recharge
@@ -137,7 +147,7 @@ public final class Player extends Entity {
             if (dashGhostTimer >= 0.035) {
                 dashGhostTimer = 0;
                 BufferedImage heroFrame = getHeroSprite(9);
-                particles.add(Particle.createDashGhost(sprites, x - 5, y - 3, heroFrame));
+                particles.add(Particle.createDashGhost(sprites, x - 5, y - 5, heroFrame));
             }
 
             // Dash Attack: damage enemies in path
@@ -336,9 +346,9 @@ public final class Player extends Entity {
 
         BufferedImage heroImg = getHeroSprite(frameIdx);
 
-        // Render Hero
+        // Render Hero (boots end at sprite row 22 -> bottom pixel 23, aligned with hitbox height 18 via ry - 5)
         int drawX = rx - 5;
-        int drawY = ry - 3;
+        int drawY = ry - 5;
         if (!facingRight) {
             g.drawImage(heroImg, drawX + 24, drawY, -24, 24, null);
         } else {
@@ -448,7 +458,19 @@ public final class Player extends Entity {
     public int getGold() { return gold; }
 
     public void addFullness(int f) { this.fullness = Math.min(MAX_FULLNESS, this.fullness + f); }
+    public int consumeFullness(int amount) {
+        if (fullness <= 0 || amount <= 0) return 0;
+        int prev = fullness;
+        fullness = Math.max(0, fullness - amount);
+        int delta = prev - fullness;
+        if (delta > 0) {
+            fullnessDrainFlashTimer = 0.9;
+        }
+        return delta;
+    }
     public int getFullness() { return fullness; }
+    public double getDisplayFullness() { return displayFullness; }
+    public double getFullnessDrainFlashTimer() { return fullnessDrainFlashTimer; }
 
     public void increaseMaxHp(int bonus) {
         this.maxHealth += bonus;
