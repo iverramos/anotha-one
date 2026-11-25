@@ -88,31 +88,40 @@ public final class AssetGenerator {
     public static final int RED_HEART   = 0xFFe62e3d;
     public static final int RED_DARK    = 0xFF8f121e;
 
-    public static final String[] DIRS = {"characters", "enemies", "environment", "backgrounds", "effects", "ui", "audio"};
+    public static final String[] DIRS = {
+            "sprites/player", "sprites/enemies", "sprites/bosses", "sprites/npcs", "sprites/weapons", "sprites/items",
+            "tilesets/village", "tilesets/forest", "tilesets/dungeon", "tilesets/castle", "tilesets/underground", "tilesets/ruins",
+            "buildings/medieval", "buildings/shops", "buildings/houses", "buildings/interiors",
+            "backgrounds/forest", "backgrounds/dungeon", "backgrounds/town",
+            "effects/particles", "effects/magic", "effects/combat",
+            "config"
+    };
 
     public static void generateAll(Path root) throws IOException {
         for (String d : DIRS) Files.createDirectories(root.resolve(d));
 
-        write(buildTileset(), root.resolve("environment/tileset.png"));
-        write(buildTorch(), root.resolve("environment/torch.png"));
-        write(buildChest(), root.resolve("environment/chest.png"));
-        write(buildFoodCart(), root.resolve("environment/food_cart.png"));
+        write(buildTileset(), root.resolve("tilesets/dungeon/legacy_tileset.png"));
+        write(buildTorch(), root.resolve("sprites/items/torch.png"));
+        write(buildChest(), root.resolve("sprites/items/chest.png"));
+        write(buildFoodCart(), root.resolve("sprites/items/food_cart.png"));
 
-        write(buildPlayer(), root.resolve("characters/player.png"));
-        write(buildWeapons(), root.resolve("characters/weapons.png"));
+        write(buildPlayer(), root.resolve("sprites/player/player.png"));
+        write(buildWeapons(), root.resolve("sprites/weapons/weapons.png"));
 
-        write(buildSlash(), root.resolve("effects/slash.png"));
-        write(buildProjectiles(), root.resolve("effects/projectiles.png"));
-        write(buildParticles(), root.resolve("effects/particles.png"));
+        write(buildSlash(), root.resolve("effects/combat/slash.png"));
+        write(buildProjectiles(), root.resolve("effects/magic/projectiles.png"));
+        write(buildParticles(), root.resolve("effects/particles/particles.png"));
 
-        write(buildSlime(), root.resolve("enemies/slime.png"));
-        write(buildBat(), root.resolve("enemies/bat.png"));
-        write(buildSkeleton(), root.resolve("enemies/skeleton.png"));
-        write(buildMage(), root.resolve("enemies/mage.png"));
-        write(buildBoss(), root.resolve("enemies/boss.png"));
+        write(buildSlime(), root.resolve("sprites/enemies/slime.png"));
+        write(buildBat(), root.resolve("sprites/enemies/bat.png"));
+        write(buildSkeleton(), root.resolve("sprites/enemies/skeleton.png"));
+        write(buildMage(), root.resolve("sprites/enemies/mage.png"));
+        write(buildBoss(), root.resolve("sprites/bosses/belial.png"));
 
-        write(buildHUD(), root.resolve("ui/hud.png"));
-        write(buildCrosshair(), root.resolve("ui/crosshair.png"));
+        write(buildHUD(), root.resolve("sprites/items/hud.png"));
+        write(buildCrosshair(), root.resolve("sprites/items/crosshair.png"));
+
+        WorldAssetGenerator.generateWorldAssets(root);
     }
 
     private static void write(BufferedImage img, Path p) throws IOException {
@@ -1328,7 +1337,7 @@ public final class AssetGenerator {
     // =========================================================================
     // Pixel Drawing Utilities
     // =========================================================================
-    private static void fillRect(BufferedImage im, int x, int y, int w, int h, int color) {
+    static void fillRect(BufferedImage im, int x, int y, int w, int h, int color) {
         for (int dy = 0; dy < h; dy++) {
             for (int dx = 0; dx < w; dx++) {
                 int px = x + dx, py = y + dy;
@@ -1339,7 +1348,7 @@ public final class AssetGenerator {
         }
     }
 
-    private static void drawRect(BufferedImage im, int x, int y, int w, int h, int color) {
+    static void drawRect(BufferedImage im, int x, int y, int w, int h, int color) {
         for (int dx = 0; dx < w; dx++) {
             setPixel(im, x + dx, y, color);
             setPixel(im, x + dx, y + h - 1, color);
@@ -1350,7 +1359,7 @@ public final class AssetGenerator {
         }
     }
 
-    private static void fillCircle(BufferedImage im, int cx, int cy, int radius, int color) {
+    static void fillCircle(BufferedImage im, int cx, int cy, int radius, int color) {
         for (int dy = -radius; dy <= radius; dy++) {
             for (int dx = -radius; dx <= radius; dx++) {
                 if (dx * dx + dy * dy <= radius * radius) {
@@ -1360,7 +1369,7 @@ public final class AssetGenerator {
         }
     }
 
-    private static void setPixel(BufferedImage im, int x, int y, int color) {
+    static void setPixel(BufferedImage im, int x, int y, int color) {
         if (x >= 0 && x < im.getWidth() && y >= 0 && y < im.getHeight()) {
             im.setRGB(x, y, color);
         }

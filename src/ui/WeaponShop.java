@@ -14,16 +14,15 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 
 /**
- * Interactive Weapon Shop & Armory overlay.
- * Players can browse, purchase, and equip weapons with full stat comparisons,
- * clear pricing, and locked / owned / equipped visual badges.
+ * Interactive Weapon Shop & Armory overlay rendered at 960x540 UI resolution.
  */
 public final class WeaponShop {
-    private static final Font FONT_HEADER = new Font(Font.SANS_SERIF, Font.BOLD, 12);
-    private static final Font FONT_TITLE  = new Font(Font.SANS_SERIF, Font.BOLD, 9);
-    private static final Font FONT_DESC   = new Font(Font.SANS_SERIF, Font.PLAIN, 7);
-    private static final Font FONT_BADGE  = new Font(Font.SANS_SERIF, Font.BOLD, 8);
-    private static final Font FONT_INFO   = new Font(Font.SANS_SERIF, Font.BOLD, 9);
+    private static final Font FONT_HEADER = new Font(Font.SANS_SERIF, Font.BOLD, 22);
+    private static final Font FONT_TITLE  = new Font(Font.SANS_SERIF, Font.BOLD, 16);
+    private static final Font FONT_DESC   = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+    private static final Font FONT_BADGE  = new Font(Font.SANS_SERIF, Font.BOLD, 13);
+    private static final Font FONT_INFO   = new Font(Font.SANS_SERIF, Font.BOLD, 16);
+    private static final Font FONT_TIP    = new Font(Font.SANS_SERIF, Font.PLAIN, 13);
 
     private boolean open;
     private final SpriteManager sprites;
@@ -50,7 +49,6 @@ public final class WeaponShop {
             return;
         }
 
-        // Keyboard grid navigation (2 columns)
         if (leftPressed || rightPressed) {
             selectedIndex = (selectedIndex % 2 == 0) ? Math.min(catalog.size() - 1, selectedIndex + 1) : Math.max(0, selectedIndex - 1);
             SoundManager.play(SoundManager.Sound.UI_CLICK);
@@ -68,17 +66,16 @@ public final class WeaponShop {
             interactWithWeapon(catalog.get(selectedIndex), player);
         }
 
-        // Mouse click detection on 2-column cards
-        int menuW = 440, menuH = 240;
-        int menuX = (Constants.VIEW_W - menuW) / 2;
-        int menuY = (Constants.VIEW_H - menuH) / 2;
-        int cardW = 206, cardH = 34;
+        int menuW = 860, menuH = 472;
+        int menuX = (Constants.UI_W - menuW) / 2;
+        int menuY = (Constants.UI_H - menuH) / 2;
+        int cardW = 406, cardH = 66;
 
         for (int i = 0; i < catalog.size(); i++) {
             int col = i % 2;
             int row = i / 2;
-            int cx = menuX + 10 + col * (cardW + 8);
-            int cy = menuY + 36 + row * (cardH + 5);
+            int cx = menuX + 18 + col * (cardW + 12);
+            int cy = menuY + 66 + row * (cardH + 10);
 
             Rectangle cardRect = new Rectangle(cx, cy, cardW, cardH);
             if (cardRect.contains(mouseX, mouseY)) {
@@ -99,16 +96,13 @@ public final class WeaponShop {
         boolean isOwned = player.ownsWeapon(w.getId());
 
         if (isEquipped) {
-            // Already equipped
             return;
         }
 
         if (isOwned) {
-            // Equip owned weapon
             player.equipWeapon(w);
             SoundManager.play(SoundManager.Sound.UI_CLICK);
         } else {
-            // Buy locked weapon
             if (player.getGold() >= w.getPrice()) {
                 player.spendGold(w.getPrice());
                 player.unlockWeapon(w.getId());
@@ -121,55 +115,48 @@ public final class WeaponShop {
     public void render(Graphics2D g, Player player) {
         if (!open) return;
 
-        // Semi-transparent backdrop
         g.setColor(new Color(12, 10, 18, 220));
-        g.fillRect(0, 0, Constants.VIEW_W, Constants.VIEW_H);
+        g.fillRect(0, 0, Constants.UI_W, Constants.UI_H);
 
-        int menuW = 440, menuH = 240;
-        int menuX = (Constants.VIEW_W - menuW) / 2;
-        int menuY = (Constants.VIEW_H - menuH) / 2;
+        int menuW = 860, menuH = 472;
+        int menuX = (Constants.UI_W - menuW) / 2;
+        int menuY = (Constants.UI_H - menuH) / 2;
 
-        // Main Board
         g.setColor(new Color(0x282333));
         g.fillRect(menuX, menuY, menuW, menuH);
         g.setColor(new Color(0xfabc2a));
         g.drawRect(menuX, menuY, menuW, menuH);
-        g.drawRect(menuX + 2, menuY + 2, menuW - 4, menuH - 4);
+        g.drawRect(menuX + 3, menuY + 3, menuW - 6, menuH - 6);
 
-        // Header Title
         g.setFont(FONT_HEADER);
         g.setColor(new Color(0xfabc2a));
-        g.drawString("ROYAL ARMORY & WEAPON SHOP", menuX + 16, menuY + 20);
+        g.drawString("ROYAL ARMORY & WEAPON SHOP", menuX + 26, menuY + 38);
 
-        // Player Gold Counter
         g.setFont(FONT_INFO);
         g.setColor(Color.WHITE);
         String goldStr = "Gold: " + player.getGold() + " G";
         int gw = g.getFontMetrics().stringWidth(goldStr);
-        g.drawString(goldStr, menuX + menuW - gw - 20, menuY + 20);
+        g.drawString(goldStr, menuX + menuW - gw - 28, menuY + 38);
 
-        // Divider
         g.setColor(new Color(0x434a63));
-        g.drawLine(menuX + 10, menuY + 28, menuX + menuW - 10, menuY + 28);
+        g.drawLine(menuX + 18, menuY + 52, menuX + menuW - 18, menuY + 52);
 
-        // Render Weapon Cards in 2 columns
-        BufferedImage[] wImgs = sprites.slice("characters/weapons.png", 24, 24);
+        BufferedImage[] wImgs = sprites.sprite("weapons");
         Weapon activeWeapon = player.getActiveWeapon();
-        int cardW = 206, cardH = 34;
+        int cardW = 406, cardH = 66;
 
         for (int i = 0; i < catalog.size(); i++) {
             Weapon w = catalog.get(i);
             int col = i % 2;
             int row = i / 2;
-            int cx = menuX + 10 + col * (cardW + 8);
-            int cy = menuY + 36 + row * (cardH + 5);
+            int cx = menuX + 18 + col * (cardW + 12);
+            int cy = menuY + 66 + row * (cardH + 10);
 
             boolean isEquipped = (activeWeapon != null && activeWeapon.getId() == w.getId());
             boolean isOwned = player.ownsWeapon(w.getId());
             boolean canAfford = player.getGold() >= w.getPrice();
             boolean isSelected = (i == selectedIndex);
 
-            // Card background
             if (isEquipped) {
                 g.setColor(new Color(0x263747));
             } else if (isSelected) {
@@ -179,7 +166,6 @@ public final class WeaponShop {
             }
             g.fillRect(cx, cy, cardW, cardH);
 
-            // Border
             if (isEquipped) {
                 g.setColor(new Color(0x38d7f2));
             } else if (isSelected) {
@@ -189,30 +175,25 @@ public final class WeaponShop {
             }
             g.drawRect(cx, cy, cardW, cardH);
 
-            // Weapon icon
             int imgIdx = w.getId() < wImgs.length ? w.getId() : 0;
-            g.drawImage(wImgs[imgIdx], cx + 4, cy + 5, null);
+            g.drawImage(wImgs[imgIdx], cx + 8, cy + 9, 48, 48, null);
 
-            // Weapon Name & Rarity
             g.setFont(FONT_TITLE);
             g.setColor(w.getRarity().color);
-            g.drawString(w.getName(), cx + 32, cy + 12);
+            g.drawString(w.getName(), cx + 64, cy + 22);
 
-            // Type & ATK & Speed stats
             g.setFont(FONT_DESC);
-            g.setColor(new Color(0xa8b6cc));
+            g.setColor(new Color(0xd0dced));
             String stats = "ATK " + w.getBaseDamage() + "  |  " + w.getType().name();
-            g.drawString(stats, cx + 32, cy + 22);
+            g.drawString(stats, cx + 64, cy + 40);
 
-            // Description
-            g.setColor(new Color(0x738299));
+            g.setColor(new Color(0x98a6c0));
             String desc = w.getDescription();
-            if (desc.length() > 32) desc = desc.substring(0, 30) + "..";
-            g.drawString(desc, cx + 32, cy + 30);
+            if (desc.length() > 38) desc = desc.substring(0, 36) + "..";
+            g.drawString(desc, cx + 64, cy + 56);
 
-            // Status Badge (Right side of card)
-            int badgeW = 54, badgeH = 16;
-            int bx = cx + cardW - badgeW - 6;
+            int badgeW = 94, badgeH = 30;
+            int bx = cx + cardW - badgeW - 10;
             int by = cy + (cardH - badgeH) / 2;
 
             if (isEquipped) {
@@ -232,7 +213,6 @@ public final class WeaponShop {
                 g.setColor(new Color(0xa8ff85));
                 centerText(g, "EQUIP", bx, by, badgeW, badgeH);
             } else {
-                // Locked / Buy
                 g.setColor(canAfford ? new Color(0x523910) : new Color(0x282333));
                 g.fillRect(bx, by, badgeW, badgeH);
                 g.setColor(canAfford ? new Color(0xfabc2a) : new Color(0x555060));
@@ -243,10 +223,11 @@ public final class WeaponShop {
             }
         }
 
-        // Footer instructions
-        g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 8));
+        g.setFont(FONT_TIP);
+        String tip = "Click or [ENTER] to Buy / Equip   |   [ESC] or [B] to Close";
+        int tw = g.getFontMetrics().stringWidth(tip);
         g.setColor(new Color(0xa8b6cc));
-        g.drawString("Click or [ENTER] to Buy / Equip   |   [ESC] or [B] to Close", menuX + 80, menuY + menuH - 6);
+        g.drawString(tip, menuX + (menuW - tw) / 2, menuY + menuH - 14);
     }
 
     private static void centerText(Graphics2D g, String text, int x, int y, int w, int h) {

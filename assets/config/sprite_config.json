@@ -1,0 +1,136 @@
+{
+  "sprites": {
+    "hero": {
+      "file": "assets/sprites/player/player.png",
+      "width": 24,
+      "height": 24,
+      "frames": 10,
+      "animation_speed": 10,
+      "offset_x": -5,
+      "offset_y": -5
+    },
+    "npcs": {
+      "file": "assets/sprites/npcs/npcs.png",
+      "width": 24,
+      "height": 24,
+      "frames": 3,
+      "animation_speed": 4,
+      "offset_x": -5,
+      "offset_y": -5
+    },
+    "training_dummy": {
+      "file": "assets/sprites/enemies/dummy.png",
+      "width": 24,
+      "height": 24,
+      "frames": 2,
+      "animation_speed": 6,
+      "offset_x": -4,
+      "offset_y": -4
+    },
+    "weapons": {
+      "file": "assets/sprites/weapons/weapons.png",
+      "width": 24,
+      "height": 24,
+      "frames": 9,
+      "animation_speed": 1
+    },
+    "slime": {
+      "file": "assets/sprites/enemies/slime.png",
+      "width": 20,
+      "height": 20,
+      "frames": 4,
+      "animation_speed": 6
+    },
+    "bat": {
+      "file": "assets/sprites/enemies/bat.png",
+      "width": 24,
+      "height": 20,
+      "frames": 4,
+      "animation_speed": 10
+    },
+    "skeleton": {
+      "file": "assets/sprites/enemies/skeleton.png",
+      "width": 24,
+      "height": 24,
+      "frames": 4,
+      "animation_speed": 6
+    },
+    "mage": {
+      "file": "assets/sprites/enemies/mage.png",
+      "width": 24,
+      "height": 24,
+      "frames": 4,
+      "animation_speed": 6
+    },
+    "boss_belial": {
+      "file": "assets/sprites/bosses/belial.png",
+      "width": 48,
+      "height": 48,
+      "frames": 4,
+      "animation_speed": 4
+    },
+    "boss_malakor": {
+      "file": "assets/sprites/bosses/malakor.png",
+      "width": 48,
+      "height": 48,
+      "frames": 4,
+      "animation_speed": 4.5
+    },
+    "torch": {
+      "file": "assets/sprites/items/torch.png",
+      "width": 16,
+      "height": 16,
+      "frames": 4,
+      "animation_speed": 8
+    },
+    "chest": {
+      "file": "assets/sprites/items/chest.png",
+      "width": 24,
+      "height": 20,
+      "frames": 3,
+      "animation_speed": 6
+    },
+    "food_cart": {
+      "file": "assets/sprites/items/food_cart.png",
+      "width": 48,
+      "height": 36,
+      "frames": 1,
+      "animation_speed": 1
+    },
+    "projectiles": {
+      "file": "assets/effects/magic/projectiles.png",
+      "width": 16,
+      "height": 16,
+      "frames": 4,
+      "animation_speed": 1
+    },
+    "slash": {
+      "file": "assets/effects/combat/slash.png",
+      "width": 32,
+      "height": 32,
+      "frames": 4,
+      "animation_speed": 20
+    },
+    "particles": {
+      "file": "assets/effects/particles/particles.png",
+      "width": 8,
+      "height": 8,
+      "frames": 8,
+      "animation_speed": 10
+    },
+    "hud": {
+      "file": "assets/sprites/items/hud.png",
+      "width": 160,
+      "height": 24,
+      "frames": 1,
+      "animation_speed": 1
+    },
+    "crosshair": {
+      "file": "assets/sprites/items/crosshair.png",
+      "width": 16,
+      "height": 16,
+      "frames": 1,
+      "animation_speed": 1
+    }
+  }
+}

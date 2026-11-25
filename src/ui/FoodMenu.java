@@ -12,7 +12,7 @@ import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 
 /**
- * Interactive food menu overlay for Han's Dungeon Diner.
+ * Interactive food menu overlay for Han's Dungeon Diner (960x540 UI space).
  */
 public final class FoodMenu {
     public static class Dish {
@@ -50,6 +50,12 @@ public final class FoodMenu {
             new Dish(3, "Honey Pancake",   15, 15, 0, 40, 0, 0, 0, "+40 HP Recovery", 3)
     };
 
+    private static final Font FONT_HEADER = new Font(Font.SANS_SERIF, Font.BOLD, 22);
+    private static final Font FONT_STATS  = new Font(Font.SANS_SERIF, Font.BOLD, 16);
+    private static final Font FONT_ITEM   = new Font(Font.SANS_SERIF, Font.BOLD, 16);
+    private static final Font FONT_DESC   = new Font(Font.SANS_SERIF, Font.PLAIN, 13);
+    private static final Font FONT_TIP    = new Font(Font.SANS_SERIF, Font.PLAIN, 13);
+
     private boolean open;
     private final SpriteManager sprites;
 
@@ -79,12 +85,13 @@ public final class FoodMenu {
 
     public void handleMouseClick(int mouseX, int mouseY, Player player) {
         if (!open) return;
-        int menuX = (Constants.VIEW_W - 280) / 2;
-        int menuY = (Constants.VIEW_H - 180) / 2;
+        int menuW = 580, menuH = 380;
+        int menuX = (Constants.UI_W - menuW) / 2;
+        int menuY = (Constants.UI_H - menuH) / 2;
 
         for (int i = 0; i < DISHES.length; i++) {
-            int itemY = menuY + 45 + i * 28;
-            Rectangle rect = new Rectangle(menuX + 12, itemY, 256, 24);
+            int itemY = menuY + 94 + i * 60;
+            Rectangle rect = new Rectangle(menuX + 24, itemY, menuW - 48, 52);
             if (rect.contains(mouseX, mouseY)) {
                 tryBuy(i, player);
                 return;
@@ -95,68 +102,66 @@ public final class FoodMenu {
     public void render(Graphics2D g, Player player) {
         if (!open) return;
 
-        // Semi-transparent backdrop
         g.setColor(new Color(15, 12, 22, 210));
-        g.fillRect(0, 0, Constants.VIEW_W, Constants.VIEW_H);
+        g.fillRect(0, 0, Constants.UI_W, Constants.UI_H);
 
-        int menuW = 280, menuH = 180;
-        int menuX = (Constants.VIEW_W - menuW) / 2;
-        int menuY = (Constants.VIEW_H - menuH) / 2;
+        int menuW = 580, menuH = 380;
+        int menuX = (Constants.UI_W - menuW) / 2;
+        int menuY = (Constants.UI_H - menuH) / 2;
 
-        // Main Board
         g.setColor(new Color(0x282333));
         g.fillRect(menuX, menuY, menuW, menuH);
         g.setColor(new Color(0xfabc2a));
         g.drawRect(menuX, menuY, menuW, menuH);
-        g.drawRect(menuX + 2, menuY + 2, menuW - 4, menuH - 4);
+        g.drawRect(menuX + 3, menuY + 3, menuW - 6, menuH - 6);
 
-        // Header Title
-        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        g.setFont(FONT_HEADER);
+        String header = "HAN'S DUNGEON DINER";
+        int hw = g.getFontMetrics().stringWidth(header);
         g.setColor(new Color(0xfabc2a));
-        g.drawString("HAN'S DUNGEON DINER", menuX + 60, menuY + 20);
+        g.drawString(header, menuX + (menuW - hw) / 2, menuY + 38);
 
-        // Stats bar (Gold & Fullness)
-        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 9));
+        g.setFont(FONT_STATS);
         g.setColor(Color.WHITE);
-        g.drawString("Gold: " + player.getGold() + " G", menuX + 20, menuY + 36);
-        g.drawString("Fullness: " + player.getFullness() + " / " + Player.MAX_FULLNESS, menuX + 160, menuY + 36);
+        g.drawString("Gold: " + player.getGold() + " G", menuX + 32, menuY + 72);
+        String fullStr = "Fullness: " + player.getFullness() + " / " + Player.MAX_FULLNESS;
+        int fw = g.getFontMetrics().stringWidth(fullStr);
+        g.drawString(fullStr, menuX + menuW - fw - 32, menuY + 72);
 
-        // Dishes
-        BufferedImage hud = sprites.get("ui/hud.png");
+        BufferedImage hud = sprites.sprite("hud")[0];
         int[] iconOffsets = {74, 90, 106, 122};
 
         for (int i = 0; i < DISHES.length; i++) {
             Dish d = DISHES[i];
-            int itemY = menuY + 45 + i * 28;
+            int itemY = menuY + 94 + i * 60;
             boolean canAfford = player.getGold() >= d.cost && (player.getFullness() + d.fullness <= Player.MAX_FULLNESS);
 
-            // Item card background
             g.setColor(canAfford ? new Color(0x383347) : new Color(0x221e2c));
-            g.fillRect(menuX + 12, itemY, 256, 24);
+            g.fillRect(menuX + 24, itemY, menuW - 48, 52);
             g.setColor(canAfford ? new Color(0x65607a) : new Color(0x332c3f));
-            g.drawRect(menuX + 12, itemY, 256, 24);
+            g.drawRect(menuX + 24, itemY, menuW - 48, 52);
 
-            // Icon
             BufferedImage icon = hud.getSubimage(iconOffsets[d.iconIdx], 2, 14, 14);
-            g.drawImage(icon, menuX + 16, itemY + 5, null);
+            g.drawImage(icon, menuX + 34, itemY + 12, 28, 28, null);
 
-            // Name & Price
-            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 9));
+            g.setFont(FONT_ITEM);
             g.setColor(canAfford ? Color.WHITE : Color.GRAY);
-            g.drawString("[" + (i + 1) + "] " + d.name, menuX + 34, itemY + 12);
+            g.drawString("[" + (i + 1) + "] " + d.name, menuX + 74, itemY + 23);
 
+            String priceStr = d.cost + " G (" + d.fullness + " Full)";
+            int pw = g.getFontMetrics().stringWidth(priceStr);
             g.setColor(canAfford ? new Color(0xfabc2a) : Color.DARK_GRAY);
-            g.drawString(d.cost + " G (" + d.fullness + " Full)", menuX + 180, itemY + 12);
+            g.drawString(priceStr, menuX + menuW - 38 - pw, itemY + 23);
 
-            // Effect Desc
-            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 8));
+            g.setFont(FONT_DESC);
             g.setColor(canAfford ? new Color(0x38d7f2) : Color.DARK_GRAY);
-            g.drawString(d.desc, menuX + 34, itemY + 21);
+            g.drawString(d.desc, menuX + 74, itemY + 42);
         }
 
-        // Footer instructions
-        g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 8));
+        g.setFont(FONT_TIP);
+        String tip = "Press [1-4] or Click to eat   |   [E] or [ESC] to Close";
+        int tw = g.getFontMetrics().stringWidth(tip);
         g.setColor(new Color(0xa8b6cc));
-        g.drawString("Press [1-4] or Click to eat   |   [E] or [ESC] to Close", menuX + 42, menuY + menuH - 8);
+        g.drawString(tip, menuX + (menuW - tw) / 2, menuY + menuH - 14);
     }
 }

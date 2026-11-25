@@ -67,23 +67,17 @@ public final class Chest {
         int rx = (int) Math.round(x - camX);
         int ry = (int) Math.round(y - camY);
 
-        BufferedImage[] frames = sprites.slice("environment/chest.png", 24, 20);
+        BufferedImage[] frames = sprites.sprite("chest");
         int frameIdx = Math.min(frames.length - 1, state);
         g.drawImage(frames[frameIdx], rx, ry, null);
-
-        // Interact prompt if player is nearby and chest is closed
-        if (!opened) {
-            double dist = Math.hypot(playerX - (x + 12), playerY - (y + 10));
-            if (dist < 32) {
-                g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 9));
-                String prompt = "[E] OPEN";
-                g.setColor(Color.BLACK);
-                g.drawString(prompt, rx + 1, ry - 5);
-                g.setColor(new Color(0xfabc2a));
-                g.drawString(prompt, rx, ry - 6);
-            }
-        }
     }
+
+    public boolean isPlayerNearby(double playerX, double playerY) {
+        return !opened && Math.hypot(playerX - (x + 12), playerY - (y + 10)) < 34;
+    }
+
+    public double getX() { return x; }
+    public double getY() { return y; }
 
     public Rectangle getBounds() {
         return new Rectangle((int) x, (int) y, 24, 20);

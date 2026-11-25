@@ -1,24 +1,28 @@
 import audio.SoundManager;
 import combat.DamageNumber;
-import combat.Weapon;
+import config.GameConfig;
 import entities.BossEnemy;
 import entities.Chest;
 import entities.Enemy;
 import entities.FoodCart;
+import entities.NPC;
 import entities.Particle;
 import entities.Pickup;
 import entities.Player;
 import entities.Projectile;
 import entities.Tier2BossEnemy;
+import entities.TrainingDummy;
 import input.InputHandler;
 import input.InputHandler.Action;
 import rendering.Renderer;
 import rendering.SpriteManager;
 import ui.CreditsScreen;
+import ui.DialogueBox;
 import ui.FoodMenu;
 import ui.HUD;
 import ui.SettingsMenu;
 import ui.TitleScreen;
+import ui.TutorialManager;
 import ui.WeaponShop;
 import utilities.Constants;
 import world.Dungeon;
@@ -29,23 +33,28 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 /**
- * Top-level Game State orchestrating the Dungreed-style dungeon crawler.
- * Manages Title screen, Settings, Credits, Player combat, Dungeon Tiers 1 & 2,
- * Boss encounters, Weapon Shop, and Audio synthesis.
+ * Top-level Game State orchestrating the Dead Cells / Dungreed-inspired action platformer.
+ * Coordinates Title/Settings/Credits, 960x540 crisp UI + 2x pixel-art world rendering,
+ * NPC DialogueBox, Starting Tutorial with TrainingDummy, Fullness progression,
+ * JSON-driven biomes & modular buildings, and Tier 1 & 2 dungeon encounters.
  */
 public final class Game {
     public enum GameState {
         TITLE, SETTINGS, CREDITS, PLAYING
     }
 
-    private static final Font FONT_TITLE = new Font(Font.SANS_SERIF, Font.BOLD, 16);
-    private static final Font FONT_BODY  = new Font(Font.SANS_SERIF, Font.BOLD, 10);
-    private static final Font FONT_SMALL = new Font(Font.SANS_SERIF, Font.PLAIN, 8);
+    private static final Font FONT_TITLE      = new Font(Font.SANS_SERIF, Font.BOLD, 32);
+    private static final Font FONT_BODY       = new Font(Font.SANS_SERIF, Font.BOLD, 18);
+    private static final Font FONT_SMALL      = new Font(Font.SANS_SERIF, Font.BOLD, 14);
+    private static final Font FONT_PROMPT     = new Font(Font.SANS_SERIF, Font.BOLD, 15);
+    private static final Font FONT_BANNER     = new Font(Font.SANS_SERIF, Font.BOLD, 24);
 
     private final InputHandler input;
     private final SpriteManager sprites;
@@ -56,6 +65,8 @@ public final class Game {
     private final TitleScreen titleScreen;
     private final SettingsMenu settingsMenu;
     private final CreditsScreen creditsScreen;
+    private final DialogueBox dialogueBox;
+    private final TutorialManager tutorialManager;
 
     private GameState state = GameState.TITLE;
     private GameState returnState = GameState.TITLE;
@@ -87,6 +98,8 @@ public final class Game {
         this.titleScreen = new TitleScreen();
         this.settingsMenu = new SettingsMenu();
         this.creditsScreen = new CreditsScreen();
+        this.dialogueBox = new DialogueBox();
+        this.tutorialManager = new TutorialManager();
 
         SoundManager.init();
         initGame();
@@ -95,11 +108,15 @@ public final class Game {
 
     private void initGame() {
         dungeon = new Dungeon(sprites, renderer, 1);
-        player = new Player(sprites, 4 * Constants.TILE, 12 * Constants.TILE);
+        player = new Player(sprites, 4 * Constants.TILE, 13 * Constants.TILE);
         projectiles.clear();
         particles.clear();
         pickups.clear();
         damageNumbers.clear();
+        dialogueBox.close();
+        foodMenu.setOpen(false);
+        weaponShop.setOpen(false);
+        tutorialManager.reset();
         camX = 0;
         camY = 0;
         paused = false;
@@ -126,7 +143,7 @@ public final class Game {
         input.poll();
 
         // -------------------------------------------------------------
-        // State Machine Handling
+        // Menu State Machine
         // -------------------------------------------------------------
         if (state == GameState.TITLE) {
             titleScreen.update(dt);
@@ -186,19 +203,35 @@ public final class Game {
         // -------------------------------------------------------------
         // Playing State
         // -------------------------------------------------------------
-        // Restart / Return to Title on R / Enter when dead or victorious
         if ((player.isDead() || victory) && input.wasPressed(Action.RESTART)) {
             initGame();
             state = GameState.TITLE;
             return;
         }
 
-        // Tier 1 descent trigger
         if (tier1Clear) {
             if (input.wasPressed(Action.INTERACT) || input.wasPressed(Action.RESTART)) {
                 descendToTier2();
                 return;
             }
+        }
+
+        // Active Dialogue Box
+        if (dialogueBox.isOpen()) {
+            dialogueBox.update(dt);
+            int slot = -1;
+            if (input.wasPressed(Action.SLOT_1)) slot = 0;
+            else if (input.wasPressed(Action.SLOT_2)) slot = 1;
+            else if (input.wasPressed(Action.SLOT_3)) slot = 2;
+            dialogueBox.handleInput(
+                    input.wasPressed(Action.UP),
+                    input.wasPressed(Action.DOWN),
+                    input.wasPressed(Action.JUMP) || input.wasPressed(Action.INTERACT) || input.wasPressed(Action.RESTART),
+                    input.wasPressed(Action.PAUSE),
+                    slot,
+                    input.getMouseX(), input.getMouseY(), input.wasLeftPressed()
+            );
+            return;
         }
 
         // Weapon Shop interaction
@@ -216,18 +249,11 @@ public final class Game {
             return;
         }
 
-        // Food Menu interaction
         Room currentRoom = dungeon.getCurrentRoom();
-        if (currentRoom.getFoodCart() != null && currentRoom.getFoodCart().isPlayerNearby(player.getCenterX(), player.getCenterY())) {
-            if (input.wasPressed(Action.INTERACT)) {
-                foodMenu.toggle();
-            }
-        } else if (foodMenu.isOpen()) {
-            foodMenu.setOpen(false);
-        }
 
+        // Food Menu interaction
         if (foodMenu.isOpen()) {
-            if (input.wasPressed(Action.PAUSE)) {
+            if (input.wasPressed(Action.PAUSE) || input.wasPressed(Action.INTERACT)) {
                 foodMenu.setOpen(false);
                 return;
             }
@@ -238,7 +264,7 @@ public final class Game {
             return;
         }
 
-        // Toggle Weapon Shop via [B]
+        // Quick-open Weapon Shop via [B]
         if (input.wasPressed(Action.SHOP)) {
             weaponShop.toggle();
             return;
@@ -250,7 +276,7 @@ public final class Game {
             SoundManager.play(SoundManager.Sound.UI_CLICK);
         }
         if (paused) {
-            if (input.wasPressed(Action.SHOP)) { // 'B' or 'S' in pause menu
+            if (input.wasPressed(Action.SHOP)) {
                 returnState = GameState.PLAYING;
                 state = GameState.SETTINGS;
             }
@@ -267,11 +293,26 @@ public final class Game {
         if (input.wasPressed(Action.SLOT_3)) player.setWeaponSlot(2);
         if (input.getWheelDelta() != 0) player.switchWeapon(input.getWheelDelta());
 
-        // Interact with Chests
+        // Interactions ([E] / [F]): NPCs -> FoodCart -> Chest
         if (input.wasPressed(Action.INTERACT)) {
-            Chest chest = currentRoom.getChest();
-            if (chest != null) {
-                List<Pickup> loot = chest.tryOpen(player.getCenterX(), player.getCenterY());
+            boolean handled = false;
+            for (NPC npc : currentRoom.getNpcs()) {
+                if (npc.isPlayerNearby(player.getCenterX(), player.getCenterY())) {
+                    Runnable onTalked = (npc.getRole() == NPC.Role.INSTRUCTOR_GARETH)
+                            ? tutorialManager::notifyNpcTalked
+                            : null;
+                    npc.startDialogue(dialogueBox, onTalked, () -> weaponShop.setOpen(true));
+                    handled = true;
+                    break;
+                }
+            }
+            if (!handled && currentRoom.getFoodCart() != null
+                    && currentRoom.getFoodCart().isPlayerNearby(player.getCenterX(), player.getCenterY())) {
+                NPC.startHanDinerDialogue(dialogueBox, () -> foodMenu.setOpen(true));
+                handled = true;
+            }
+            if (!handled && currentRoom.getChest() != null) {
+                List<Pickup> loot = currentRoom.getChest().tryOpen(player.getCenterX(), player.getCenterY());
                 pickups.addAll(loot);
             }
         }
@@ -280,21 +321,46 @@ public final class Game {
         currentRoom.update(dt);
         TileMap map = currentRoom.getMap();
 
+        // Check one-time fullness reduction when a room is cleared
+        if (currentRoom.pollClearFullnessTrigger()) {
+            applyRoomFullnessDrain(15);
+        }
+
         // Update Player
-        int mouseWorldX = (int) (input.getMouseX() + camX);
-        int mouseWorldY = (int) (input.getMouseY() + camY);
+        int mouseWorldX = input.getWorldMouseX() + (int) Math.round(camX);
+        int mouseWorldY = input.getWorldMouseY() + (int) Math.round(camY);
+
+        boolean leftDown = input.isDown(Action.LEFT);
+        boolean rightDown = input.isDown(Action.RIGHT);
+        boolean jumpPressed = input.wasPressed(Action.JUMP) || input.wasPressed(Action.UP);
 
         player.update(dt,
-                input.isDown(Action.LEFT),
-                input.isDown(Action.RIGHT),
+                leftDown,
+                rightDown,
                 input.isDown(Action.JUMP) || input.isDown(Action.UP),
-                input.wasPressed(Action.JUMP) || input.wasPressed(Action.UP),
+                jumpPressed,
                 input.isDown(Action.DOWN),
                 input.wasRightPressed(),
                 mouseWorldX, mouseWorldY,
                 projectiles, particles, currentRoom.getEnemies(), damageNumbers);
 
         map.resolveCollisions(player, dt, player.isDroppingThroughPlatform());
+
+        // Tutorial Progression (Tier 1 Room 0)
+        if (dungeon.getTier() == 1 && currentRoom.getType() == Room.Type.START) {
+            tutorialManager.update(dt, player, leftDown, rightDown, jumpPressed);
+            if (tutorialManager.isCompleted()) {
+                currentRoom.unlockTutorialDoor();
+            }
+        }
+
+        // Dash vs Training Dummy
+        TrainingDummy dummy = currentRoom.getTrainingDummy();
+        if (dummy != null && player.isDashing() && dummy.canTakeHit()
+                && player.getBounds().intersects(dummy.getBounds())) {
+            dummy.onHit(22, player.getCenterX() < dummy.getCenterX(), particles, damageNumbers);
+            tutorialManager.notifyDummyHit();
+        }
 
         // Hazard spike check for player (respects i-frames)
         if (map.checkHazard(player.getBounds())) {
@@ -305,9 +371,9 @@ public final class Game {
             }
         }
 
-        // Player attack
+        // Player attack (supports Enemies and Training Dummy)
         if (input.isLeftDown()) {
-            player.tryAttack(projectiles, particles, currentRoom.getEnemies(), damageNumbers);
+            player.tryAttack(projectiles, particles, currentRoom.getEnemies(), damageNumbers, dummy, tutorialManager);
         }
 
         // Update Enemies
@@ -343,7 +409,6 @@ public final class Game {
                 continue;
             }
 
-            // Check collision with solid tiles
             int col = (int) (p.getX() / Constants.TILE);
             int row = (int) (p.getY() / Constants.TILE);
             if (TileMap.isSolid(map.getForeground(col, row))) {
@@ -355,14 +420,12 @@ public final class Game {
 
             Rectangle pBox = p.getBounds();
 
-            // Player projectile vs Enemies
             if (p.getOwner() == Projectile.Owner.PLAYER) {
+                boolean hitSomething = false;
                 for (Enemy e : currentRoom.getEnemies()) {
                     if (!e.isDead() && e.getBounds().intersects(pBox)) {
                         e.takeDamage(p.getDamage());
-                        double kx = p.getVx() * 0.3;
-                        double ky = p.getVy() * 0.2 - 20;
-                        e.applyKnockback(kx, ky);
+                        e.applyKnockback(p.getVx() * 0.3, p.getVy() * 0.2 - 20);
                         SoundManager.play(SoundManager.Sound.HIT);
                         particles.add(Particle.createImpact(sprites, p.getX(), p.getY(),
                                 (e instanceof entities.SlimeEnemy) ? Particle.Type.SLIME : Particle.Type.BLOOD));
@@ -370,11 +433,17 @@ public final class Game {
                                 String.valueOf(p.getDamage()), Color.YELLOW, false));
                         p.deactivate();
                         projIter.remove();
+                        hitSomething = true;
                         break;
                     }
                 }
+                if (!hitSomething && dummy != null && dummy.getBounds().intersects(pBox)) {
+                    dummy.onHit(p.getDamage(), p.getVx() > 0, particles, damageNumbers);
+                    tutorialManager.notifyDummyHit();
+                    p.deactivate();
+                    projIter.remove();
+                }
             } else {
-                // Enemy projectile vs Player (respects i-frames and dash)
                 if (!player.isInvulnerable() && player.getBounds().intersects(pBox)) {
                     player.takeDamage(p.getDamage());
                     damageNumbers.add(new DamageNumber(player.getCenterX(), player.getY() - 4,
@@ -391,14 +460,14 @@ public final class Game {
             Pickup pick = pickIter.next();
             pick.update(dt, player.getCenterX(), player.getCenterY());
 
-            // Tile collision for pickups
             int pCol = (int) (pick.getX() / Constants.TILE);
             int pRow = (int) ((pick.getY() + 6) / Constants.TILE);
-            if (TileMap.isSolid(map.getForeground(pCol, pRow)) || TileMap.isOneWayPlatform(map.getForeground(pCol, pRow))) {
+            if (TileMap.isSolid(map.getForeground(pCol, pRow))
+                    || TileMap.isOneWayPlatform(map.getForeground(pCol, pRow))
+                    || map.isPlatformOverlay(pCol, pRow)) {
                 pick.setOnGround(true);
             }
 
-            // Collection check
             if (pick.getBounds().intersects(player.getBounds())) {
                 if (pick.getType() == Pickup.Type.COIN) {
                     player.addGold(pick.getValue());
@@ -424,22 +493,14 @@ public final class Game {
             }
         }
 
-        // Update Particles
         particles.removeIf(pt -> !pt.update(dt));
-
-        // Update Damage Numbers
         damageNumbers.removeIf(dn -> !dn.update(dt));
 
         // Room Transitions via Doors
         if (currentRoom.isLeftDoorOpen() && player.getBounds().intersects(currentRoom.getLeftDoorBounds())) {
             int prevIdx = dungeon.getCurrentRoomIndex() - 1;
             if (prevIdx >= 0) {
-                dungeon.moveToRoom(prevIdx);
-                projectiles.clear();
-                particles.clear();
-                pickups.clear();
-                Room nextRoom = dungeon.getCurrentRoom();
-                player.setPosition((nextRoom.getMap().getCols() - 4) * Constants.TILE, (nextRoom.getMap().getRows() - 4) * Constants.TILE);
+                enterRoom(prevIdx, true);
             }
         } else if (currentRoom.isRightDoorOpen() && player.getBounds().intersects(currentRoom.getRightDoorBounds())) {
             if (dungeon.getTier() == 1 && currentRoom.getType() == Room.Type.BOSS && tier1Clear) {
@@ -448,18 +509,13 @@ public final class Game {
             }
             int nextIdx = dungeon.getCurrentRoomIndex() + 1;
             if (nextIdx < dungeon.getRoomCount()) {
-                dungeon.moveToRoom(nextIdx);
-                projectiles.clear();
-                particles.clear();
-                pickups.clear();
-                Room nextRoom = dungeon.getCurrentRoom();
-                player.setPosition(3 * Constants.TILE, (nextRoom.getMap().getRows() - 4) * Constants.TILE);
+                enterRoom(nextIdx, false);
             }
         }
 
-        // Smooth Camera Lerp
-        double targetCamX = player.getCenterX() - Constants.VIEW_W / 2.0 + Math.cos(player.getAimAngle()) * 30.0;
-        double targetCamY = player.getCenterY() - Constants.VIEW_H / 2.0 + Math.sin(player.getAimAngle()) * 20.0;
+        // Smooth Camera Lerp with deadzone snap
+        double targetCamX = player.getCenterX() - Constants.VIEW_W / 2.0 + Math.cos(player.getAimAngle()) * 24.0;
+        double targetCamY = player.getCenterY() - Constants.VIEW_H / 2.0 + Math.sin(player.getAimAngle()) * 14.0;
         double maxCamX = map.getPixelWidth() - Constants.VIEW_W;
         double maxCamY = map.getPixelHeight() - Constants.VIEW_H;
 
@@ -468,23 +524,47 @@ public final class Game {
 
         camX += (targetCamX - camX) * 10.0 * dt;
         camY += (targetCamY - camY) * 10.0 * dt;
+        if (Math.abs(targetCamX - camX) < 0.05) camX = targetCamX;
+        if (Math.abs(targetCamY - camY) < 0.05) camY = targetCamY;
+    }
+
+    private void enterRoom(int index, boolean fromRight) {
+        dungeon.moveToRoom(index);
+        projectiles.clear();
+        particles.clear();
+        pickups.clear();
+        Room nextRoom = dungeon.getCurrentRoom();
+        double spawnX = fromRight
+                ? (nextRoom.getMap().getCols() - 4) * Constants.TILE
+                : 3 * Constants.TILE;
+        double spawnY = (nextRoom.getMap().getRows() - 4) * Constants.TILE;
+        player.setPosition(spawnX, spawnY);
+
+        if (nextRoom.consumeFirstEntryFullnessTrigger()) {
+            applyRoomFullnessDrain(15);
+        }
+    }
+
+    private void applyRoomFullnessDrain(int amount) {
+        int dropped = player.consumeFullness(amount);
+        if (dropped > 0) {
+            damageNumbers.add(new DamageNumber(player.getCenterX(), player.getY() - 10,
+                    "-" + dropped + " Full", new Color(0xffb838), false));
+        }
     }
 
     public void render(Graphics2D g) {
-        // Deep background
         g.setColor(new Color(0x0e1017));
-        g.fillRect(0, 0, Constants.VIEW_W, Constants.VIEW_H);
+        g.fillRect(0, 0, Constants.UI_W, Constants.UI_H);
 
         if (state == GameState.TITLE) {
             titleScreen.render(g);
             return;
         }
-
         if (state == GameState.SETTINGS) {
             settingsMenu.render(g);
             return;
         }
-
         if (state == GameState.CREDITS) {
             creditsScreen.render(g, input.getMouseX(), input.getMouseY());
             return;
@@ -492,47 +572,60 @@ public final class Game {
 
         int renderCamX = (int) Math.round(camX) + renderer.getShakeOffsetX();
         int renderCamY = (int) Math.round(camY) + renderer.getShakeOffsetY();
-
         Room room = dungeon.getCurrentRoom();
 
-        // 1. Room background & tiles
+        // -------------------------------------------------------------
+        // Pass 1: World Layer (scaled 2x with crisp nearest-neighbor)
+        // -------------------------------------------------------------
+        AffineTransform oldTx = g.getTransform();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        g.scale(Constants.UI_SCALE, Constants.UI_SCALE);
+
         room.render(g, renderCamX, renderCamY, player.getCenterX(), player.getCenterY());
-
-        // 2. Pickups
         for (Pickup pick : pickups) pick.render(g, renderCamX, renderCamY);
-
-        // 3. Enemies
         for (Enemy e : room.getEnemies()) e.render(g, renderCamX, renderCamY);
-
-        // 4. Player
         player.render(g, renderCamX, renderCamY);
-
-        // 5. Projectiles
         for (Projectile p : projectiles) p.render(g, renderCamX, renderCamY);
-
-        // 6. Particles
         for (Particle pt : particles) pt.render(g, renderCamX, renderCamY);
 
-        // 7. Floating Damage Numbers
+        g.setTransform(oldTx);
+
+        // -------------------------------------------------------------
+        // Pass 2: High-Resolution UI & Text Layer (960x540)
+        // -------------------------------------------------------------
         for (DamageNumber dn : damageNumbers) dn.render(g, renderCamX, renderCamY);
 
-        // 8. HUD & Crosshair
-        hud.render(g, player, dungeon, input.getMouseX(), input.getMouseY());
+        renderWorldInteractPrompts(g, room, renderCamX, renderCamY);
 
-        // 9. Food Menu & Weapon Shop
-        foodMenu.render(g, player);
-        weaponShop.render(g, player);
-
-        // 10. Room Title Banner & Shop Prompt
-        g.setFont(FONT_SMALL);
-        text(g, room.getTitle() + "  |  FPS " + fps, 8, Constants.VIEW_H - 4, new Color(0x656f8f));
-
-        if (room.getType() == Room.Type.FOOD_SHOP && !foodMenu.isOpen() && !weaponShop.isOpen()) {
-            g.setFont(FONT_SMALL);
-            text(g, "[E] Han's Diner   |   [B] Weapon Armory", Constants.VIEW_W / 2 - 75, Constants.VIEW_H - 4, new Color(0xfabc2a));
+        if (room.isClearBannerActive()) {
+            g.setFont(FONT_BANNER);
+            String banner = "★ ROOM CLEARED! ★";
+            int bx = (Constants.UI_W - g.getFontMetrics().stringWidth(banner)) / 2;
+            text(g, banner, bx, 128, new Color(0xfabc2a));
         }
 
-        // Overlays: Paused / Game Over / Tier 1 Cleared / Victory
+        hud.render(g, player, dungeon, input.getMouseX(), input.getMouseY());
+
+        if (dungeon.getTier() == 1 && room.getType() == Room.Type.START && !dialogueBox.isOpen()) {
+            tutorialManager.render(g, true);
+        }
+
+        foodMenu.render(g, player);
+        weaponShop.render(g, player);
+        dialogueBox.render(g);
+
+        // Bottom Location, Biome & FPS Bar
+        GameConfig.BiomeDef biome = sprites.getConfig().getBiome(room.getBiomeId());
+        String biomeName = (biome != null) ? biome.name : room.getBiomeId();
+        g.setFont(FONT_SMALL);
+        text(g, room.getTitle() + "  [" + biomeName + "]  |  FPS " + fps, 16, Constants.UI_H - 10, new Color(0x8a96ba));
+
+        if (room.getType() == Room.Type.FOOD_SHOP && !foodMenu.isOpen() && !weaponShop.isOpen() && !dialogueBox.isOpen()) {
+            String shopTip = "[E] Talk / Diner / Forge   |   [B] Quick Armory";
+            int sw = g.getFontMetrics().stringWidth(shopTip);
+            text(g, shopTip, Constants.UI_W - sw - 16, Constants.UI_H - 10, new Color(0xfabc2a));
+        }
+
         if (paused) {
             drawOverlay(g, "PAUSED", "Press ESC to resume   |   [B] Audio Settings", new Color(0xfabc2a));
         } else if (player.isDead()) {
@@ -540,26 +633,71 @@ public final class Game {
         } else if (tier1Clear) {
             drawOverlay(g, "★ TIER 1 CLEARED! ★", "Belial has fallen! Press [E] or [ENTER] to descend to B2F", new Color(0x38d7f2));
         } else if (victory) {
-            drawOverlay(g, "VICTORY ACHIEVED!", "The Void Archon has fallen! The Depths are Cleansed! Press [R] for Title", new Color(0xfabc2a));
+            drawOverlay(g, "VICTORY ACHIEVED!", "The Void Archon has fallen! Press [R] for Title", new Color(0xfabc2a));
+        }
+    }
+
+    private void renderWorldInteractPrompts(Graphics2D g, Room room, int camX, int camY) {
+        if (dialogueBox.isOpen() || foodMenu.isOpen() || weaponShop.isOpen()) return;
+        g.setFont(FONT_PROMPT);
+
+        for (NPC npc : room.getNpcs()) {
+            if (npc.isPlayerNearby(player.getCenterX(), player.getCenterY())) {
+                int ux = (int) Math.round((npc.getCenterX() - camX) * Constants.UI_SCALE);
+                int uy = (int) Math.round((npc.getY() - camY - 12) * Constants.UI_SCALE);
+                String p = "[E] TALK - " + npc.getName();
+                int pw = g.getFontMetrics().stringWidth(p);
+                text(g, p, ux - pw / 2, uy, new Color(0xfabc2a));
+            }
+        }
+
+        FoodCart cart = room.getFoodCart();
+        if (cart != null && cart.isPlayerNearby(player.getCenterX(), player.getCenterY())) {
+            int ux = (int) Math.round((cart.getX() + 24 - camX) * Constants.UI_SCALE);
+            int uy = (int) Math.round((cart.getY() - camY - 8) * Constants.UI_SCALE);
+            String p = "[E] CHEF HAN'S DINER";
+            int pw = g.getFontMetrics().stringWidth(p);
+            text(g, p, ux - pw / 2, uy, new Color(0xfabc2a));
+        }
+
+        Chest chest = room.getChest();
+        if (chest != null && chest.isPlayerNearby(player.getCenterX(), player.getCenterY())) {
+            int ux = (int) Math.round((chest.getX() + 12 - camX) * Constants.UI_SCALE);
+            int uy = (int) Math.round((chest.getY() - camY - 8) * Constants.UI_SCALE);
+            String p = "[E] OPEN CHEST";
+            int pw = g.getFontMetrics().stringWidth(p);
+            text(g, p, ux - pw / 2, uy, new Color(0xfabc2a));
+        }
+
+        // Locked portal hint during tutorial
+        if (dungeon.getTier() == 1 && room.getType() == Room.Type.START && !room.isRightDoorOpen()) {
+            Rectangle door = room.getRightDoorBounds();
+            if (Math.abs(player.getCenterX() - door.getCenterX()) < 54) {
+                int ux = (int) Math.round((door.getCenterX() - camX) * Constants.UI_SCALE);
+                int uy = (int) Math.round((door.y - camY - 10) * Constants.UI_SCALE);
+                String p = "Complete Tutorial to Enter";
+                int pw = g.getFontMetrics().stringWidth(p);
+                text(g, p, ux - pw / 2, uy, new Color(0xff7852));
+            }
         }
     }
 
     private void drawOverlay(Graphics2D g, String title, String sub, Color titleColor) {
-        g.setColor(new Color(15, 12, 22, 190));
-        g.fillRect(0, 0, Constants.VIEW_W, Constants.VIEW_H);
+        g.setColor(new Color(15, 12, 22, 195));
+        g.fillRect(0, 0, Constants.UI_W, Constants.UI_H);
 
         g.setFont(FONT_TITLE);
         int tw = g.getFontMetrics().stringWidth(title);
-        text(g, title, (Constants.VIEW_W - tw) / 2, Constants.VIEW_H / 2 - 10, titleColor);
+        text(g, title, (Constants.UI_W - tw) / 2, Constants.UI_H / 2 - 18, titleColor);
 
         g.setFont(FONT_BODY);
         int sw = g.getFontMetrics().stringWidth(sub);
-        text(g, sub, (Constants.VIEW_W - sw) / 2, Constants.VIEW_H / 2 + 14, Color.WHITE);
+        text(g, sub, (Constants.UI_W - sw) / 2, Constants.UI_H / 2 + 24, Color.WHITE);
     }
 
     private static void text(Graphics2D g, String s, int x, int y, Color c) {
         g.setColor(Color.BLACK);
-        g.drawString(s, x + 1, y + 1);
+        g.drawString(s, x + 2, y + 2);
         g.setColor(c);
         g.drawString(s, x, y);
     }

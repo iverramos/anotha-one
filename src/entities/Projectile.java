@@ -55,7 +55,7 @@ public final class Projectile {
         int ry = (int) Math.round(y - camY);
 
         double angle = Math.atan2(vy, vx);
-        BufferedImage[] projs = sprites.slice("effects/projectiles.png", 16, 16);
+        BufferedImage[] projs = sprites.sprite("projectiles");
         int idx = 0;
         switch (type) {
             case ARROW: idx = 0; break;

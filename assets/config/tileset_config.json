@@ -1,0 +1,108 @@
+{
+  "tilesets": {
+    "village": {
+      "file": "assets/tilesets/village/tileset.png",
+      "tile_width": 16,
+      "tile_height": 16
+    },
+    "forest": {
+      "file": "assets/tilesets/forest/tileset.png",
+      "tile_width": 16,
+      "tile_height": 16
+    },
+    "dungeon": {
+      "file": "assets/tilesets/dungeon/tileset.png",
+      "tile_width": 16,
+      "tile_height": 16
+    },
+    "castle": {
+      "file": "assets/tilesets/castle/tileset.png",
+      "tile_width": 16,
+      "tile_height": 16
+    },
+    "underground": {
+      "file": "assets/tilesets/underground/tileset.png",
+      "tile_width": 16,
+      "tile_height": 16
+    },
+    "ruins": {
+      "file": "assets/tilesets/ruins/tileset.png",
+      "tile_width": 16,
+      "tile_height": 16
+    }
+  },
+  "tiles": {
+    "wall_brick": {
+      "tileset": "dungeon",
+      "tile_id": 0,
+      "collision": true,
+      "layer": "ground",
+      "variations": [0, 14]
+    },
+    "surface_floor": {
+      "tileset": "dungeon",
+      "tile_id": 1,
+      "collision": true,
+      "layer": "ground",
+      "variations": [1, 10, 11]
+    },
+    "subsurface_cobble": {
+      "tileset": "dungeon",
+      "tile_id": 2,
+      "collision": true,
+      "layer": "ground",
+      "variations": [2, 15]
+    },
+    "wood_platform": {
+      "tileset": "dungeon",
+      "tile_id": 3,
+      "collision": true,
+      "one_way": true,
+      "layer": "platform",
+      "variations": [3]
+    },
+    "spikes": {
+      "tileset": "dungeon",
+      "tile_id": 4,
+      "collision": false,
+      "hazard": true,
+      "layer": "foreground",
+      "variations": [4]
+    },
+    "bg_wall": {
+      "tileset": "dungeon",
+      "tile_id": 5,
+      "collision": false,
+      "layer": "background",
+      "variations": [5]
+    },
+    "bg_pillar": {
+      "tileset": "dungeon",
+      "tile_id": 6,
+      "collision": false,
+      "layer": "background",
+      "variations": [6]
+    },
+    "portal_arch": {
+      "tileset": "dungeon",
+      "tile_id": 7,
+      "collision": false,
+      "layer": "foreground",
+      "variations": [7]
+    },
+    "mossy_stone": {
+      "tileset": "dungeon",
+      "tile_id": 8,
+      "collision": true,
+      "layer": "ground",
+      "variations": [8]
+    },
+    "boss_gate": {
+      "tileset": "dungeon",
+      "tile_id": 9,
+      "collision": true,
+      "layer": "foreground",
+      "variations": [9]
+    }
+  }
+}

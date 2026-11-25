@@ -83,17 +83,15 @@ public final class Pickup {
         int ry = (int) Math.round(y - camY + (onGround ? Math.sin(bobTimer) * 2 : 0));
 
         if (type == Type.COIN) {
-            BufferedImage hud = sprites.get("ui/hud.png");
-            // Coin at x=60, y=0, w=10, h=10
+            BufferedImage hud = sprites.sprite("hud")[0];
             BufferedImage coin = hud.getSubimage(60, 0, 10, 10);
             g.drawImage(coin, rx - 5, ry - 5, null);
         } else if (type == Type.HEART) {
-            BufferedImage hud = sprites.get("ui/hud.png");
-            // Heart at x=0, y=0, w=12, h=12
+            BufferedImage hud = sprites.sprite("hud")[0];
             BufferedImage heart = hud.getSubimage(0, 0, 12, 12);
             g.drawImage(heart, rx - 6, ry - 6, null);
         } else if (type == Type.WEAPON && weapon != null) {
-            BufferedImage[] wImgs = sprites.slice("characters/weapons.png", 24, 24);
+            BufferedImage[] wImgs = sprites.sprite("weapons");
             if (weapon.getId() < wImgs.length) {
                 g.drawImage(wImgs[weapon.getId()], rx - 12, ry - 12, null);
             }

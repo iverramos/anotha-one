@@ -232,6 +232,11 @@ public final class Player extends Entity {
     }
 
     public void tryAttack(List<Projectile> projectiles, List<Particle> particles, List<Enemy> enemies, List<DamageNumber> damageNumbers) {
+        tryAttack(projectiles, particles, enemies, damageNumbers, null, null);
+    }
+
+    public void tryAttack(List<Projectile> projectiles, List<Particle> particles, List<Enemy> enemies,
+                          List<DamageNumber> damageNumbers, TrainingDummy dummy, ui.TutorialManager tutorial) {
         if (dashing || weapons.isEmpty()) return;
         Weapon w = weapons.get(activeWeaponIndex);
         if (!w.canAttack()) return;
@@ -277,6 +282,21 @@ public final class Player extends Entity {
                         particles.add(Particle.createImpact(sprites, e.getCenterX(), e.getCenterY(), Particle.Type.BLOOD));
                         damageNumbers.add(new DamageNumber(e.getCenterX(), e.getY() - 4, totalDamage + (isCrit ? "!" : ""),
                                 isCrit ? new java.awt.Color(0xfabc2a) : java.awt.Color.YELLOW, isCrit));
+                    }
+                }
+            }
+
+            // Melee hit detection against Training Dummy
+            if (dummy != null) {
+                double dx = dummy.getCenterX() - pCenterX;
+                double dy = dummy.getCenterY() - pCenterY;
+                double dist = Math.hypot(dx, dy);
+                if (dist <= w.getRange() + dummy.getWidth() / 2.0) {
+                    double targetAngle = Math.atan2(dy, dx);
+                    double angleDiff = Math.abs(normalizeAngle(targetAngle - aimAngle));
+                    if (angleDiff < Math.toRadians(65)) {
+                        dummy.onHit(totalDamage, pCenterX < dummy.getCenterX(), particles, damageNumbers);
+                        if (tutorial != null) tutorial.notifyDummyHit();
                     }
                 }
             }
@@ -358,7 +378,7 @@ public final class Player extends Entity {
         // Render Held Weapon rotated towards aimAngle
         if (!weapons.isEmpty() && !dashing) {
             Weapon w = weapons.get(activeWeaponIndex);
-            BufferedImage[] wImgs = sprites.slice("characters/weapons.png", 24, 24);
+            BufferedImage[] wImgs = sprites.sprite("weapons");
             int wImgIdx = w.getId() < wImgs.length ? w.getId() : 0;
             BufferedImage wImg = wImgs[wImgIdx];
             AffineTransform oldTransform = g.getTransform();
@@ -380,7 +400,7 @@ public final class Player extends Entity {
     }
 
     private BufferedImage getHeroSprite(int frame) {
-        BufferedImage[] frames = sprites.slice("characters/player.png", 24, 24);
+        BufferedImage[] frames = sprites.sprite("hero");
         return frames[Math.min(frames.length - 1, Math.max(0, frame))];
     }
 

@@ -12,9 +12,7 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Main Menu / Title screen for Gloamroot.
- * Features animated title, floating embers, options for Play, Settings, Credits, and Exit,
- * supporting both keyboard and mouse interaction.
+ * Main Menu / Title screen rendered at crisp 960x540 resolution.
  */
 public final class TitleScreen {
     public enum Action {
@@ -28,15 +26,14 @@ public final class TitleScreen {
             "EXIT"
     };
 
-    private static final Font FONT_LOGO = new Font(Font.SANS_SERIF, Font.BOLD, 28);
-    private static final Font FONT_SUB = new Font(Font.SANS_SERIF, Font.BOLD, 10);
-    private static final Font FONT_OPTION = new Font(Font.SANS_SERIF, Font.BOLD, 12);
-    private static final Font FONT_TIP = new Font(Font.SANS_SERIF, Font.PLAIN, 8);
+    private static final Font FONT_LOGO   = new Font(Font.SANS_SERIF, Font.BOLD, 54);
+    private static final Font FONT_SUB    = new Font(Font.SANS_SERIF, Font.BOLD, 18);
+    private static final Font FONT_OPTION = new Font(Font.SANS_SERIF, Font.BOLD, 22);
+    private static final Font FONT_TIP    = new Font(Font.SANS_SERIF, Font.PLAIN, 14);
 
     private int selectedIndex = 0;
     private double animTime = 0;
 
-    // Background floating embers
     private static class Ember {
         double x, y, vy, vx;
         double life, maxLife;
@@ -47,17 +44,17 @@ public final class TitleScreen {
     private final Random rng = new Random();
 
     public TitleScreen() {
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 36; i++) {
             spawnEmber(true);
         }
     }
 
     private void spawnEmber(boolean randomY) {
         Ember e = new Ember();
-        e.x = rng.nextDouble() * Constants.VIEW_W;
-        e.y = randomY ? rng.nextDouble() * Constants.VIEW_H : Constants.VIEW_H + 5;
-        e.vy = -15 - rng.nextDouble() * 25;
-        e.vx = (rng.nextDouble() - 0.5) * 15;
+        e.x = rng.nextDouble() * Constants.UI_W;
+        e.y = randomY ? rng.nextDouble() * Constants.UI_H : Constants.UI_H + 10;
+        e.vy = -30 - rng.nextDouble() * 50;
+        e.vx = (rng.nextDouble() - 0.5) * 30;
         e.life = 0;
         e.maxLife = 2.5 + rng.nextDouble() * 3.0;
         float r = 0.9f + rng.nextFloat() * 0.1f;
@@ -74,7 +71,7 @@ public final class TitleScreen {
             e.life += dt;
             e.x += e.vx * dt;
             e.y += e.vy * dt;
-            if (e.life >= e.maxLife || e.y < -10) {
+            if (e.life >= e.maxLife || e.y < -20) {
                 embers.remove(i);
                 spawnEmber(false);
             }
@@ -91,14 +88,13 @@ public final class TitleScreen {
             SoundManager.play(SoundManager.Sound.UI_CLICK);
         }
 
-        // Mouse hover detection
-        int menuY = 135;
-        int btnW = 160;
-        int btnH = 22;
-        int btnX = (Constants.VIEW_W - btnW) / 2;
+        int menuY = 264;
+        int btnW = 320;
+        int btnH = 44;
+        int btnX = (Constants.UI_W - btnW) / 2;
 
         for (int i = 0; i < OPTIONS.length; i++) {
-            int y = menuY + i * 26;
+            int y = menuY + i * 54;
             Rectangle rect = new Rectangle(btnX, y, btnW, btnH);
             if (rect.contains(mouseX, mouseY)) {
                 if (selectedIndex != i) {
@@ -130,67 +126,56 @@ public final class TitleScreen {
     }
 
     public void render(Graphics2D g) {
-        // Dark dungeon atmosphere background
         g.setColor(new Color(0x0e1017));
-        g.fillRect(0, 0, Constants.VIEW_W, Constants.VIEW_H);
+        g.fillRect(0, 0, Constants.UI_W, Constants.UI_H);
 
-        // Draw animated embers
         for (Ember e : embers) {
             float alpha = (float) Math.max(0, Math.sin((e.life / e.maxLife) * Math.PI));
             g.setColor(new Color(e.color.getRed() / 255f, e.color.getGreen() / 255f, e.color.getBlue() / 255f, alpha * 0.75f));
-            int size = (int) (2 + (e.life / e.maxLife) * 2);
+            int size = (int) (4 + (e.life / e.maxLife) * 4);
             g.fillRect((int) e.x, (int) e.y, size, size);
         }
 
-        // Title glow & text
         String title = Constants.TITLE.toUpperCase();
         g.setFont(FONT_LOGO);
         int tw = g.getFontMetrics().stringWidth(title);
-        int tx = (Constants.VIEW_W - tw) / 2;
-        int ty = 68;
+        int tx = (Constants.UI_W - tw) / 2;
+        int ty = 136;
 
-        // Shadow & glow
         g.setColor(new Color(0x3a0d14));
-        g.drawString(title, tx + 2, ty + 2);
+        g.drawString(title, tx + 4, ty + 4);
         g.setColor(new Color(0x8f121e));
-        g.drawString(title, tx + 1, ty + 1);
-
-        // Pulsing main title color
-        int goldOsc = (int) (20 * Math.sin(animTime * 3));
+        g.drawString(title, tx + 2, ty + 2);
         g.setColor(new Color(0xfabc2a));
         g.drawString(title, tx, ty);
 
-        // Subtitle banner
-        String sub = "DUNGREED-INSPIRED ACTION ROGUELITE";
+        String sub = Constants.SUBTITLE.toUpperCase();
         g.setFont(FONT_SUB);
         int sw = g.getFontMetrics().stringWidth(sub);
-        int sx = (Constants.VIEW_W - sw) / 2;
+        int sx = (Constants.UI_W - sw) / 2;
         g.setColor(new Color(0x38d7f2));
-        g.drawString(sub, sx, ty + 18);
+        g.drawString(sub, sx, ty + 36);
 
-        // Menu buttons
-        int menuY = 135;
-        int btnW = 160;
-        int btnH = 22;
-        int btnX = (Constants.VIEW_W - btnW) / 2;
+        int menuY = 264;
+        int btnW = 320;
+        int btnH = 44;
+        int btnX = (Constants.UI_W - btnW) / 2;
 
         g.setFont(FONT_OPTION);
         for (int i = 0; i < OPTIONS.length; i++) {
-            int y = menuY + i * 26;
+            int y = menuY + i * 54;
             boolean selected = (i == selectedIndex);
 
-            // Button box
             if (selected) {
                 g.setColor(new Color(0x282333));
                 g.fillRect(btnX, y, btnW, btnH);
                 g.setColor(new Color(0xfabc2a));
                 g.drawRect(btnX, y, btnW, btnH);
-                g.drawRect(btnX + 1, y + 1, btnW - 2, btnH - 2);
+                g.drawRect(btnX + 2, y + 2, btnW - 4, btnH - 4);
 
-                // Animated selection arrows
-                int arrowPulse = (int) (3 * Math.sin(animTime * 6));
-                g.drawString(">", btnX + 8 + arrowPulse, y + 16);
-                g.drawString("<", btnX + btnW - 16 - arrowPulse, y + 16);
+                int arrowPulse = (int) (6 * Math.sin(animTime * 6));
+                g.drawString(">", btnX + 16 + arrowPulse, y + 30);
+                g.drawString("<", btnX + btnW - 30 - arrowPulse, y + 30);
             } else {
                 g.setColor(new Color(0x191622));
                 g.fillRect(btnX, y, btnW, btnH);
@@ -198,19 +183,17 @@ public final class TitleScreen {
                 g.drawRect(btnX, y, btnW, btnH);
             }
 
-            // Option text
             String opt = OPTIONS[i];
             int ow = g.getFontMetrics().stringWidth(opt);
-            int ox = (Constants.VIEW_W - ow) / 2;
+            int ox = (Constants.UI_W - ow) / 2;
             g.setColor(selected ? Color.WHITE : new Color(0x9faec7));
-            g.drawString(opt, ox, y + 16);
+            g.drawString(opt, ox, y + 30);
         }
 
-        // Footer navigation tip
         g.setFont(FONT_TIP);
-        String tip = "[W/S or UP/DOWN] Navigate   |   [ENTER / CLICK] Select";
+        String tip = "[W/S or UP/DOWN] Navigate   |   [ENTER / CLICK] Select   |   [F11] Fullscreen";
         int tipW = g.getFontMetrics().stringWidth(tip);
-        g.setColor(new Color(0x656f8f));
-        g.drawString(tip, (Constants.VIEW_W - tipW) / 2, Constants.VIEW_H - 12);
+        g.setColor(new Color(0x8894b8));
+        g.drawString(tip, (Constants.UI_W - tipW) / 2, Constants.UI_H - 22);
     }
 }

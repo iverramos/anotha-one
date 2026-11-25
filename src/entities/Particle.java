@@ -78,7 +78,7 @@ public final class Particle {
         double progress = life / maxLife;
 
         if (type == Type.SLASH) {
-            BufferedImage[] slashFrames = sprites.slice("effects/slash.png", 32, 32);
+            BufferedImage[] slashFrames = sprites.sprite("slash");
             int frameIdx = Math.min(slashFrames.length - 1, (int) (progress * slashFrames.length));
             BufferedImage img = slashFrames[frameIdx];
 
@@ -99,8 +99,8 @@ public final class Particle {
             return;
         }
 
-        // Particle sprite index from effects/particles.png (8x8)
-        BufferedImage[] partFrames = sprites.slice("effects/particles.png", 8, 8);
+        // Particle sprite index from particles sheet (8x8)
+        BufferedImage[] partFrames = sprites.sprite("particles");
         int idx = 0;
         switch (type) {
             case DUST: idx = 0; break;

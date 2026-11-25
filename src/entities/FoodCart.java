@@ -31,18 +31,12 @@ public final class FoodCart {
         int rx = (int) Math.round(x - camX);
         int ry = (int) Math.round(y - camY);
 
-        BufferedImage img = sprites.get("environment/food_cart.png");
+        BufferedImage img = sprites.sprite("food_cart")[0];
         g.drawImage(img, rx, ry, null);
-
-        if (isPlayerNearby(playerX, playerY)) {
-            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 9));
-            String prompt = "[E] HAN'S DINER";
-            g.setColor(Color.BLACK);
-            g.drawString(prompt, rx + 8, ry - 6);
-            g.setColor(new Color(0xfabc2a));
-            g.drawString(prompt, rx + 7, ry - 7);
-        }
     }
+
+    public double getX() { return x; }
+    public double getY() { return y; }
 
     public Rectangle getBounds() {
         return new Rectangle((int) x, (int) y, 48, 36);

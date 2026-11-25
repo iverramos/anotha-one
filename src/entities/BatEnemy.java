@@ -45,7 +45,7 @@ public final class BatEnemy extends Enemy {
         int rx = (int) Math.round(x - camX);
         int ry = (int) Math.round(y - camY);
 
-        BufferedImage[] frames = sprites.slice("enemies/bat.png", 24, 20);
+        BufferedImage[] frames = sprites.sprite("bat");
         int f = ((int) animTimer) % frames.length;
         drawSpriteWithFlash(g, frames[f], rx - 4, ry - 4, 24, 20, !facingRight);
     }

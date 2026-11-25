@@ -58,7 +58,7 @@ public final class MageEnemy extends Enemy {
         int rx = (int) Math.round(x - camX);
         int ry = (int) Math.round(y - camY);
 
-        BufferedImage[] frames = sprites.slice("enemies/mage.png", 24, 24);
+        BufferedImage[] frames = sprites.sprite("mage");
         int f = ((int) animTimer) % frames.length;
         drawSpriteWithFlash(g, frames[f], rx - 5, ry - 4, 24, 24, !facingRight);
     }

@@ -1,0 +1,76 @@
+{
+  "biomes": {
+    "medieval_village": {
+      "name": "Medieval Village",
+      "tileset": "village",
+      "background": "assets/backgrounds/town/parallax.png",
+      "parallax_far": 0.12,
+      "parallax_near": 0.30,
+      "sky_color": "#589cd6",
+      "ambient_color": "#1a1828",
+      "ambient_alpha": 10,
+      "torch_color": "#ffd270",
+      "particle_type": "LEAF"
+    },
+    "enchanted_forest": {
+      "name": "Enchanted Forest",
+      "tileset": "forest",
+      "background": "assets/backgrounds/forest/parallax.png",
+      "parallax_far": 0.15,
+      "parallax_near": 0.35,
+      "sky_color": "#3d8296",
+      "ambient_color": "#0e221b",
+      "ambient_alpha": 22,
+      "torch_color": "#96ffaa",
+      "particle_type": "FIREFLY"
+    },
+    "underground_dungeon": {
+      "name": "Underground Dungeon",
+      "tileset": "dungeon",
+      "background": "assets/backgrounds/dungeon/parallax.png",
+      "parallax_far": 0.15,
+      "parallax_near": 0.32,
+      "sky_color": "#0e1017",
+      "ambient_color": "#0a0812",
+      "ambient_alpha": 55,
+      "torch_color": "#ff9e38",
+      "particle_type": "EMBER"
+    },
+    "ancient_castle": {
+      "name": "Ancient Castle",
+      "tileset": "castle",
+      "background": "assets/backgrounds/dungeon/parallax.png",
+      "parallax_far": 0.14,
+      "parallax_near": 0.28,
+      "sky_color": "#181c2e",
+      "ambient_color": "#121224",
+      "ambient_alpha": 38,
+      "torch_color": "#ffcf68",
+      "particle_type": "DUST"
+    },
+    "dark_caverns": {
+      "name": "Dark Caverns",
+      "tileset": "underground",
+      "background": "assets/backgrounds/dungeon/parallax.png",
+      "parallax_far": 0.12,
+      "parallax_near": 0.28,
+      "sky_color": "#080b14",
+      "ambient_color": "#080618",
+      "ambient_alpha": 65,
+      "torch_color": "#45e6ff",
+      "particle_type": "SPORE"
+    },
+    "ruined_kingdom": {
+      "name": "Ruined Kingdom",
+      "tileset": "ruins",
+      "background": "assets/backgrounds/town/parallax.png",
+      "parallax_far": 0.14,
+      "parallax_near": 0.30,
+      "sky_color": "#2b2838",
+      "ambient_color": "#161220",
+      "ambient_alpha": 36,
+      "torch_color": "#e88b38",
+      "particle_type": "ASH"
+    }
+  }
+}

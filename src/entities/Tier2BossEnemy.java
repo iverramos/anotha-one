@@ -215,7 +215,7 @@ public final class Tier2BossEnemy extends Enemy {
         int rx = (int) Math.round(x - camX);
         int ry = (int) Math.round(y - camY);
 
-        BufferedImage[] frames = sprites.slice("enemies/boss.png", 48, 48);
+        BufferedImage[] frames = sprites.sprite("boss_malakor");
         int f = Math.min(frames.length - 1, Math.max(0, currentAnimFrame));
         drawSpriteWithFlash(g, frames[f], rx - 4, ry - 4, 48, 48, !facingRight);
     }

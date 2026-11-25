@@ -46,7 +46,7 @@ public final class SlimeEnemy extends Enemy {
         int rx = (int) Math.round(x - camX);
         int ry = (int) Math.round(y - camY);
 
-        BufferedImage[] frames = sprites.slice("enemies/slime.png", 20, 20);
+        BufferedImage[] frames = sprites.sprite("slime");
         int f = Math.min(frames.length - 1, Math.max(0, animState));
         drawSpriteWithFlash(g, frames[f], rx - 2, ry - 7, 20, 20, !facingRight);
     }

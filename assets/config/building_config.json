@@ -1,0 +1,288 @@
+{
+  "components": {
+    "stone_wall": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 0, "src_y": 0, "width": 16, "height": 16,
+      "collision": false, "one_way": false, "layer": "exterior"
+    },
+    "timber_wall": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 16, "src_y": 0, "width": 16, "height": 16,
+      "collision": false, "one_way": false, "layer": "exterior"
+    },
+    "interior_wall": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 32, "src_y": 0, "width": 16, "height": 16,
+      "collision": false, "one_way": false, "layer": "interior"
+    },
+    "roof_slate_left": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 48, "src_y": 0, "width": 16, "height": 16,
+      "collision": false, "one_way": true, "layer": "exterior"
+    },
+    "roof_slate_mid": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 64, "src_y": 0, "width": 16, "height": 16,
+      "collision": false, "one_way": true, "layer": "exterior"
+    },
+    "roof_slate_right": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 80, "src_y": 0, "width": 16, "height": 16,
+      "collision": false, "one_way": true, "layer": "exterior"
+    },
+    "roof_peak": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 96, "src_y": 0, "width": 16, "height": 16,
+      "collision": false, "one_way": false, "layer": "exterior"
+    },
+    "dormer_window": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 112, "src_y": 0, "width": 16, "height": 16,
+      "collision": false, "one_way": false, "layer": "exterior"
+    },
+    "shop_window": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 0, "src_y": 16, "width": 16, "height": 16,
+      "collision": false, "one_way": false, "layer": "exterior"
+    },
+    "wooden_door": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 16, "src_y": 16, "width": 16, "height": 32,
+      "collision": false, "one_way": false, "layer": "exterior"
+    },
+    "balcony": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 32, "src_y": 16, "width": 16, "height": 16,
+      "collision": true, "one_way": true, "layer": "exterior"
+    },
+    "stairs": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 48, "src_y": 16, "width": 16, "height": 16,
+      "collision": true, "one_way": true, "layer": "exterior"
+    },
+    "pillar": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 64, "src_y": 16, "width": 16, "height": 16,
+      "collision": false, "one_way": false, "layer": "exterior"
+    },
+    "chimney": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 80, "src_y": 16, "width": 16, "height": 16,
+      "collision": false, "one_way": false, "layer": "exterior"
+    },
+    "shop_sign": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 96, "src_y": 16, "width": 16, "height": 16,
+      "collision": false, "one_way": false, "layer": "decoration"
+    },
+    "blacksmith_sign": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 112, "src_y": 16, "width": 16, "height": 16,
+      "collision": false, "one_way": false, "layer": "decoration"
+    },
+    "street_lamp": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 32, "src_y": 32, "width": 16, "height": 32,
+      "collision": false, "one_way": false, "layer": "decoration"
+    },
+    "banner_red": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 48, "src_y": 32, "width": 16, "height": 32,
+      "collision": false, "one_way": false, "layer": "decoration"
+    },
+    "banner_blue": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 64, "src_y": 32, "width": 16, "height": 32,
+      "collision": false, "one_way": false, "layer": "decoration"
+    },
+    "wood_platform": {
+      "file": "assets/buildings/medieval/architecture.png",
+      "src_x": 80, "src_y": 32, "width": 16, "height": 16,
+      "collision": true, "one_way": true, "layer": "platform"
+    },
+    "bookshelf": {
+      "file": "assets/buildings/interiors/props.png",
+      "src_x": 0, "src_y": 0, "width": 16, "height": 32,
+      "collision": false, "one_way": false, "layer": "furniture"
+    },
+    "table": {
+      "file": "assets/buildings/interiors/props.png",
+      "src_x": 16, "src_y": 16, "width": 32, "height": 16,
+      "collision": false, "one_way": false, "layer": "furniture"
+    },
+    "anvil": {
+      "file": "assets/buildings/interiors/props.png",
+      "src_x": 48, "src_y": 16, "width": 16, "height": 16,
+      "collision": false, "one_way": false, "layer": "furniture"
+    },
+    "barrel": {
+      "file": "assets/buildings/interiors/props.png",
+      "src_x": 64, "src_y": 16, "width": 16, "height": 16,
+      "collision": false, "one_way": false, "layer": "furniture"
+    },
+    "candle_stand": {
+      "file": "assets/buildings/interiors/props.png",
+      "src_x": 80, "src_y": 0, "width": 16, "height": 32,
+      "collision": false, "one_way": false, "layer": "decoration"
+    }
+  },
+  "buildings": {
+    "tavern": {
+      "name": "The Oak & Shield Tavern",
+      "biome": "medieval_village",
+      "width": 8,
+      "height": 6,
+      "components": [
+        {"id": "chimney", "x": 6, "y": 0},
+        {"id": "roof_slate_left", "x": 0, "y": 1},
+        {"id": "roof_slate_mid", "x": 1, "y": 1},
+        {"id": "dormer_window", "x": 2, "y": 1},
+        {"id": "roof_slate_mid", "x": 3, "y": 1},
+        {"id": "roof_slate_mid", "x": 4, "y": 1},
+        {"id": "dormer_window", "x": 5, "y": 1},
+        {"id": "roof_slate_mid", "x": 6, "y": 1},
+        {"id": "roof_slate_right", "x": 7, "y": 1},
+        {"id": "timber_wall", "x": 1, "y": 2},
+        {"id": "shop_window", "x": 2, "y": 2},
+        {"id": "timber_wall", "x": 3, "y": 2},
+        {"id": "banner_red", "x": 4, "y": 2},
+        {"id": "timber_wall", "x": 5, "y": 2},
+        {"id": "shop_window", "x": 6, "y": 2},
+        {"id": "balcony", "x": 1, "y": 3},
+        {"id": "balcony", "x": 2, "y": 3},
+        {"id": "balcony", "x": 3, "y": 3},
+        {"id": "balcony", "x": 4, "y": 3},
+        {"id": "balcony", "x": 5, "y": 3},
+        {"id": "balcony", "x": 6, "y": 3},
+        {"id": "street_lamp", "x": 0, "y": 4},
+        {"id": "stone_wall", "x": 1, "y": 4},
+        {"id": "wooden_door", "x": 2, "y": 4},
+        {"id": "stone_wall", "x": 3, "y": 4},
+        {"id": "shop_window", "x": 4, "y": 4},
+        {"id": "stone_wall", "x": 5, "y": 4},
+        {"id": "shop_window", "x": 6, "y": 4},
+        {"id": "shop_sign", "x": 7, "y": 4},
+        {"id": "stone_wall", "x": 1, "y": 5},
+        {"id": "stone_wall", "x": 3, "y": 5},
+        {"id": "stone_wall", "x": 4, "y": 5},
+        {"id": "stone_wall", "x": 5, "y": 5},
+        {"id": "stone_wall", "x": 6, "y": 5},
+        {"id": "barrel", "x": 7, "y": 5}
+      ]
+    },
+    "medieval_shop": {
+      "name": "Gilded Guild Shop",
+      "biome": "medieval_village",
+      "width": 7,
+      "height": 5,
+      "components": [
+        {"id": "roof_slate_left", "x": 0, "y": 0},
+        {"id": "roof_slate_mid", "x": 1, "y": 0},
+        {"id": "dormer_window", "x": 2, "y": 0},
+        {"id": "roof_slate_mid", "x": 3, "y": 0},
+        {"id": "dormer_window", "x": 4, "y": 0},
+        {"id": "roof_slate_mid", "x": 5, "y": 0},
+        {"id": "roof_slate_right", "x": 6, "y": 0},
+        {"id": "timber_wall", "x": 1, "y": 1},
+        {"id": "shop_window", "x": 2, "y": 1},
+        {"id": "banner_blue", "x": 3, "y": 1},
+        {"id": "shop_window", "x": 4, "y": 1},
+        {"id": "timber_wall", "x": 5, "y": 1},
+        {"id": "balcony", "x": 1, "y": 2},
+        {"id": "balcony", "x": 2, "y": 2},
+        {"id": "balcony", "x": 3, "y": 2},
+        {"id": "balcony", "x": 4, "y": 2},
+        {"id": "balcony", "x": 5, "y": 2},
+        {"id": "shop_sign", "x": 0, "y": 3},
+        {"id": "stone_wall", "x": 1, "y": 3},
+        {"id": "wooden_door", "x": 2, "y": 3},
+        {"id": "interior_wall", "x": 3, "y": 3},
+        {"id": "shop_window", "x": 4, "y": 3},
+        {"id": "stone_wall", "x": 5, "y": 3},
+        {"id": "street_lamp", "x": 6, "y": 3},
+        {"id": "stone_wall", "x": 1, "y": 4},
+        {"id": "table", "x": 3, "y": 4},
+        {"id": "stone_wall", "x": 5, "y": 4}
+      ]
+    },
+    "blacksmith": {
+      "name": "Vorn's Iron Forge",
+      "biome": "medieval_village",
+      "width": 6,
+      "height": 5,
+      "components": [
+        {"id": "chimney", "x": 4, "y": 0},
+        {"id": "roof_slate_left", "x": 0, "y": 1},
+        {"id": "roof_slate_mid", "x": 1, "y": 1},
+        {"id": "roof_slate_mid", "x": 2, "y": 1},
+        {"id": "roof_slate_mid", "x": 3, "y": 1},
+        {"id": "roof_slate_mid", "x": 4, "y": 1},
+        {"id": "roof_slate_right", "x": 5, "y": 1},
+        {"id": "stone_wall", "x": 1, "y": 2},
+        {"id": "timber_wall", "x": 2, "y": 2},
+        {"id": "timber_wall", "x": 3, "y": 2},
+        {"id": "stone_wall", "x": 4, "y": 2},
+        {"id": "blacksmith_sign", "x": 0, "y": 3},
+        {"id": "stone_wall", "x": 1, "y": 3},
+        {"id": "wooden_door", "x": 2, "y": 3},
+        {"id": "interior_wall", "x": 3, "y": 3},
+        {"id": "stone_wall", "x": 4, "y": 3},
+        {"id": "barrel", "x": 0, "y": 4},
+        {"id": "stone_wall", "x": 1, "y": 4},
+        {"id": "anvil", "x": 3, "y": 4},
+        {"id": "stone_wall", "x": 4, "y": 4}
+      ]
+    },
+    "residential_house": {
+      "name": "Cottage",
+      "biome": "enchanted_forest",
+      "width": 5,
+      "height": 4,
+      "components": [
+        {"id": "chimney", "x": 3, "y": 0},
+        {"id": "roof_slate_left", "x": 0, "y": 1},
+        {"id": "roof_slate_mid", "x": 1, "y": 1},
+        {"id": "dormer_window", "x": 2, "y": 1},
+        {"id": "roof_slate_mid", "x": 3, "y": 1},
+        {"id": "roof_slate_right", "x": 4, "y": 1},
+        {"id": "timber_wall", "x": 1, "y": 2},
+        {"id": "wooden_door", "x": 2, "y": 2},
+        {"id": "shop_window", "x": 3, "y": 2},
+        {"id": "stone_wall", "x": 1, "y": 3},
+        {"id": "stone_wall", "x": 3, "y": 3}
+      ]
+    },
+    "ruined_keep": {
+      "name": "Shattered Sanctuary",
+      "biome": "ruined_kingdom",
+      "width": 7,
+      "height": 5,
+      "components": [
+        {"id": "pillar", "x": 0, "y": 1},
+        {"id": "wood_platform", "x": 1, "y": 1},
+        {"id": "wood_platform", "x": 2, "y": 1},
+        {"id": "wood_platform", "x": 3, "y": 1},
+        {"id": "wood_platform", "x": 4, "y": 1},
+        {"id": "wood_platform", "x": 5, "y": 1},
+        {"id": "pillar", "x": 6, "y": 1},
+        {"id": "pillar", "x": 0, "y": 2},
+        {"id": "interior_wall", "x": 1, "y": 2},
+        {"id": "banner_red", "x": 2, "y": 2},
+        {"id": "interior_wall", "x": 3, "y": 2},
+        {"id": "bookshelf", "x": 4, "y": 2},
+        {"id": "interior_wall", "x": 5, "y": 2},
+        {"id": "pillar", "x": 6, "y": 2},
+        {"id": "pillar", "x": 0, "y": 3},
+        {"id": "candle_stand", "x": 1, "y": 3},
+        {"id": "interior_wall", "x": 2, "y": 3},
+        {"id": "interior_wall", "x": 3, "y": 3},
+        {"id": "interior_wall", "x": 5, "y": 3},
+        {"id": "pillar", "x": 6, "y": 3},
+        {"id": "pillar", "x": 0, "y": 4},
+        {"id": "table", "x": 2, "y": 4},
+        {"id": "barrel", "x": 5, "y": 4},
+        {"id": "pillar", "x": 6, "y": 4}
+      ]
+    }
+  }
+}

@@ -10,14 +10,14 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 
 /**
- * Settings menu providing independent SFX and BGM sliders and mute toggles,
+ * Settings menu rendered at 960x540 providing independent SFX and BGM sliders and mute toggles,
  * with persistence across game runs via audio_settings.properties.
  */
 public final class SettingsMenu {
-    private static final Font FONT_HEADER = new Font(Font.SANS_SERIF, Font.BOLD, 14);
-    private static final Font FONT_LABEL  = new Font(Font.SANS_SERIF, Font.BOLD, 10);
-    private static final Font FONT_VALUE  = new Font(Font.SANS_SERIF, Font.BOLD, 9);
-    private static final Font FONT_TIP    = new Font(Font.SANS_SERIF, Font.PLAIN, 8);
+    private static final Font FONT_HEADER = new Font(Font.SANS_SERIF, Font.BOLD, 24);
+    private static final Font FONT_LABEL  = new Font(Font.SANS_SERIF, Font.BOLD, 18);
+    private static final Font FONT_VALUE  = new Font(Font.SANS_SERIF, Font.BOLD, 15);
+    private static final Font FONT_TIP    = new Font(Font.SANS_SERIF, Font.PLAIN, 13);
 
     private int selectedRow = 0; // 0: SFX Vol, 1: SFX Mute, 2: BGM Vol, 3: BGM Mute, 4: Back
     private boolean draggingSfxSlider = false;
@@ -30,7 +30,7 @@ public final class SettingsMenu {
                                int mouseX, int mouseY, boolean mousePressed, boolean mouseReleased, boolean mouseClicked) {
         if (escPressed) {
             SoundManager.play(SoundManager.Sound.UI_CLICK);
-            return true; // Request close
+            return true;
         }
 
         if (upPressed) {
@@ -41,8 +41,7 @@ public final class SettingsMenu {
             SoundManager.play(SoundManager.Sound.UI_CLICK);
         }
 
-        // Slider adjust via keyboard
-        if (selectedRow == 0) { // SFX Vol
+        if (selectedRow == 0) {
             if (leftPressed) {
                 AudioSettings.setSfxVolume(AudioSettings.getSfxVolume() - 0.05);
                 SoundManager.play(SoundManager.Sound.UI_CLICK);
@@ -50,39 +49,38 @@ public final class SettingsMenu {
                 AudioSettings.setSfxVolume(AudioSettings.getSfxVolume() + 0.05);
                 SoundManager.play(SoundManager.Sound.UI_CLICK);
             }
-        } else if (selectedRow == 1 && enterPressed) { // SFX Mute
+        } else if (selectedRow == 1 && enterPressed) {
             AudioSettings.toggleSfxMute();
             SoundManager.play(SoundManager.Sound.UI_CLICK);
-        } else if (selectedRow == 2) { // BGM Vol
+        } else if (selectedRow == 2) {
             if (leftPressed) {
                 AudioSettings.setBgmVolume(AudioSettings.getBgmVolume() - 0.05);
             } else if (rightPressed) {
                 AudioSettings.setBgmVolume(AudioSettings.getBgmVolume() + 0.05);
             }
-        } else if (selectedRow == 3 && enterPressed) { // BGM Mute
+        } else if (selectedRow == 3 && enterPressed) {
             AudioSettings.toggleBgmMute();
             SoundManager.play(SoundManager.Sound.UI_CLICK);
-        } else if (selectedRow == 4 && enterPressed) { // Back
+        } else if (selectedRow == 4 && enterPressed) {
             SoundManager.play(SoundManager.Sound.UI_CLICK);
             return true;
         }
 
-        // Layout bounds for mouse interaction
-        int w = 320, h = 210;
-        int x = (Constants.VIEW_W - w) / 2;
-        int y = (Constants.VIEW_H - h) / 2;
+        int w = 640, h = 420;
+        int x = (Constants.UI_W - w) / 2;
+        int y = (Constants.UI_H - h) / 2;
 
-        int sfxSliderX = x + 110, sfxSliderY = y + 54, sliderW = 120, sliderH = 14;
-        int sfxMuteX   = x + 240, sfxMuteY   = y + 52, btnW = 54, btnH = 18;
+        int sfxSliderX = x + 220, sfxSliderY = y + 114, sliderW = 240, sliderH = 22;
+        int sfxMuteX   = x + 485, sfxMuteY   = y + 108, btnW = 110, btnH = 34;
 
-        int bgmSliderX = x + 110, bgmSliderY = y + 104;
-        int bgmMuteX   = x + 240, bgmMuteY   = y + 102;
+        int bgmSliderX = x + 220, bgmSliderY = y + 210;
+        int bgmMuteX   = x + 485, bgmMuteY   = y + 204;
 
-        int backBtnX   = x + (w - 100) / 2, backBtnY = y + 160, backBtnW = 100, backBtnH = 22;
+        int backBtnX   = x + (w - 200) / 2, backBtnY = y + 318, backBtnW = 200, backBtnH = 44;
 
-        Rectangle sfxSliderRect = new Rectangle(sfxSliderX, sfxSliderY - 4, sliderW, sliderH + 8);
+        Rectangle sfxSliderRect = new Rectangle(sfxSliderX, sfxSliderY - 8, sliderW, sliderH + 16);
         Rectangle sfxMuteRect   = new Rectangle(sfxMuteX, sfxMuteY, btnW, btnH);
-        Rectangle bgmSliderRect = new Rectangle(bgmSliderX, bgmSliderY - 4, sliderW, sliderH + 8);
+        Rectangle bgmSliderRect = new Rectangle(bgmSliderX, bgmSliderY - 8, sliderW, sliderH + 16);
         Rectangle bgmMuteRect   = new Rectangle(bgmMuteX, bgmMuteY, btnW, btnH);
         Rectangle backBtnRect   = new Rectangle(backBtnX, backBtnY, backBtnW, backBtnH);
 
@@ -131,44 +129,37 @@ public final class SettingsMenu {
     }
 
     public void render(Graphics2D g) {
-        // Dimmed backdrop
-        g.setColor(new Color(10, 8, 16, 215));
-        g.fillRect(0, 0, Constants.VIEW_W, Constants.VIEW_H);
+        g.setColor(new Color(10, 8, 16, 220));
+        g.fillRect(0, 0, Constants.UI_W, Constants.UI_H);
 
-        int w = 320, h = 210;
-        int x = (Constants.VIEW_W - w) / 2;
-        int y = (Constants.VIEW_H - h) / 2;
+        int w = 640, h = 420;
+        int x = (Constants.UI_W - w) / 2;
+        int y = (Constants.UI_H - h) / 2;
 
-        // Card frame
         g.setColor(new Color(0x282333));
         g.fillRect(x, y, w, h);
         g.setColor(new Color(0xfabc2a));
         g.drawRect(x, y, w, h);
-        g.drawRect(x + 2, y + 2, w - 4, h - 4);
+        g.drawRect(x + 3, y + 3, w - 6, h - 6);
 
-        // Header
         g.setFont(FONT_HEADER);
         String title = "AUDIO SETTINGS";
         int tw = g.getFontMetrics().stringWidth(title);
         g.setColor(Color.BLACK);
-        g.drawString(title, x + (w - tw) / 2 + 1, y + 25);
+        g.drawString(title, x + (w - tw) / 2 + 2, y + 48);
         g.setColor(new Color(0xfabc2a));
-        g.drawString(title, x + (w - tw) / 2, y + 24);
+        g.drawString(title, x + (w - tw) / 2, y + 46);
 
-        // Divider
         g.setColor(new Color(0x434a63));
-        g.drawLine(x + 16, y + 34, x + w - 16, y + 34);
+        g.drawLine(x + 32, y + 66, x + w - 32, y + 66);
 
-        // 1. Sound Effects (SFX)
         renderAudioSection(g, "SFX Volume:", AudioSettings.getSfxVolume(), AudioSettings.isSfxMuted(),
-                x + 16, y + 54, x + 110, y + 54, x + 240, y + 52, selectedRow == 0, selectedRow == 1);
+                x + 36, y + 114, x + 220, y + 114, x + 485, y + 108, selectedRow == 0, selectedRow == 1);
 
-        // 2. Background Music (BGM)
         renderAudioSection(g, "BGM Volume:", AudioSettings.getBgmVolume(), AudioSettings.isBgmMuted(),
-                x + 16, y + 104, x + 110, y + 104, x + 240, y + 102, selectedRow == 2, selectedRow == 3);
+                x + 36, y + 210, x + 220, y + 210, x + 485, y + 204, selectedRow == 2, selectedRow == 3);
 
-        // Back Button
-        int backBtnX = x + (w - 100) / 2, backBtnY = y + 160, backBtnW = 100, backBtnH = 22;
+        int backBtnX = x + (w - 200) / 2, backBtnY = y + 318, backBtnW = 200, backBtnH = 44;
         boolean backSelected = (selectedRow == 4);
         g.setColor(backSelected ? new Color(0x383347) : new Color(0x191622));
         g.fillRect(backBtnX, backBtnY, backBtnW, backBtnH);
@@ -179,52 +170,45 @@ public final class SettingsMenu {
         String backText = "BACK [ESC]";
         int btw = g.getFontMetrics().stringWidth(backText);
         g.setColor(backSelected ? Color.WHITE : new Color(0xa8b6cc));
-        g.drawString(backText, backBtnX + (backBtnW - btw) / 2, backBtnY + 15);
+        g.drawString(backText, backBtnX + (backBtnW - btw) / 2, backBtnY + 29);
 
-        // Footer instruction
         g.setFont(FONT_TIP);
         String tip = "Use Arrow Keys or Click/Drag to Adjust   |   Settings Saved Automatically";
         int tipW = g.getFontMetrics().stringWidth(tip);
-        g.setColor(new Color(0x656f8f));
-        g.drawString(tip, x + (w - tipW) / 2, y + h - 8);
+        g.setColor(new Color(0x8894b8));
+        g.drawString(tip, x + (w - tipW) / 2, y + h - 18);
     }
 
     private void renderAudioSection(Graphics2D g, String label, double volume, boolean muted,
                                     int lx, int ly, int sx, int sy, int mx, int my,
                                     boolean sliderSelected, boolean muteSelected) {
-        // Label
         g.setFont(FONT_LABEL);
         g.setColor(sliderSelected ? new Color(0xfabc2a) : Color.WHITE);
-        g.drawString(label, lx, ly + 10);
+        g.drawString(label, lx, ly + 17);
 
-        // Slider track
-        int trackW = 120, trackH = 10;
+        int trackW = 240, trackH = 20;
         g.setColor(new Color(0x1b1d28));
         g.fillRect(sx, sy, trackW, trackH);
         g.setColor(sliderSelected ? new Color(0xfabc2a) : new Color(0x434a63));
         g.drawRect(sx, sy, trackW, trackH);
 
-        // Fill bar
         int fillW = (int) Math.round(trackW * volume);
         Color fillColor = muted ? new Color(0x69665c) : (sliderSelected ? new Color(0x38d7f2) : new Color(0x20529c));
         g.setColor(fillColor);
-        g.fillRect(sx + 1, sy + 1, Math.max(0, fillW - 2), trackH - 2);
+        g.fillRect(sx + 2, sy + 2, Math.max(0, fillW - 4), trackH - 4);
 
-        // Slider thumb handle
-        int thumbX = sx + fillW - 3;
+        int thumbX = sx + fillW - 6;
         g.setColor(muted ? Color.GRAY : Color.WHITE);
-        g.fillRect(thumbX, sy - 2, 6, trackH + 4);
+        g.fillRect(thumbX, sy - 4, 12, trackH + 8);
         g.setColor(Color.BLACK);
-        g.drawRect(thumbX, sy - 2, 6, trackH + 4);
+        g.drawRect(thumbX, sy - 4, 12, trackH + 8);
 
-        // Percentage text
         g.setFont(FONT_VALUE);
         String pct = ((int) Math.round(volume * 100)) + "%";
         g.setColor(muted ? Color.GRAY : Color.WHITE);
-        g.drawString(pct, sx + trackW - 28, sy - 3);
+        g.drawString(pct, sx + trackW - 48, sy - 8);
 
-        // Mute button
-        int btnW = 54, btnH = 18;
+        int btnW = 110, btnH = 34;
         g.setColor(muted ? new Color(0x452416) : (muteSelected ? new Color(0x2a382c) : new Color(0x1e2420)));
         g.fillRect(mx, my, btnW, btnH);
         g.setColor(muteSelected ? new Color(0xfabc2a) : (muted ? new Color(0xe62e3d) : new Color(0x35a342)));
@@ -234,6 +218,6 @@ public final class SettingsMenu {
         String muteText = muted ? "MUTED" : "ACTIVE";
         int mtw = g.getFontMetrics().stringWidth(muteText);
         g.setColor(muted ? new Color(0xf57f87) : new Color(0x85f59c));
-        g.drawString(muteText, mx + (btnW - mtw) / 2, my + 13);
+        g.drawString(muteText, mx + (btnW - mtw) / 2, my + 23);
     }
 }

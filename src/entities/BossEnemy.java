@@ -200,7 +200,7 @@ public final class BossEnemy extends Enemy {
         int rx = (int) Math.round(x - camX);
         int ry = (int) Math.round(y - camY);
 
-        BufferedImage[] frames = sprites.slice("enemies/boss.png", 48, 48);
+        BufferedImage[] frames = sprites.sprite("boss_belial");
         int f = Math.min(frames.length - 1, Math.max(0, currentAnimFrame));
         drawSpriteWithFlash(g, frames[f], rx - 6, ry - 6, 48, 48, !facingRight);
     }

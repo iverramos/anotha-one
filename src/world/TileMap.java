@@ -6,11 +6,11 @@ import utilities.Constants;
 
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.image.BufferedImage;
 
 /**
- * TileMap managing dungeon geometry, collision resolution (solids & one-way drop-through platforms),
- * hazard spikes, and multi-layer rendering.
+ * TileMap managing dungeon/biome geometry, autotiling variations, decorative props,
+ * swept-axis collision resolution (solids & one-way platforms including modular balconies),
+ * and hazard spikes.
  */
 public final class TileMap {
     public static final int EMPTY = -1;
@@ -25,11 +25,23 @@ public final class TileMap {
     public static final int MOSSY_WALL = 8;
     public static final int BOSS_GATE = 9;
 
+    // Environmental decoration tile indices (Row 1 of standardized biome tileset)
+    public static final int DECOR_BUSH = 16;
+    public static final int DECOR_CRATE = 17;
+    public static final int DECOR_CHAIN_TOP = 18;
+    public static final int DECOR_CHAIN_END = 19;
+    public static final int DECOR_CRYSTAL_A = 20;
+    public static final int DECOR_CRYSTAL_B = 21;
+    public static final int DECOR_SIGN = 22;
+
     private final int cols;
     private final int rows;
     private final int[][] bgTiles;
     private final int[][] fgTiles;
+    private final int[][] decorTiles;
+    private final boolean[][] platformOverlay;
     private final SpriteManager sprites;
+    private String tilesetId = "dungeon";
 
     public TileMap(SpriteManager sprites, int cols, int rows) {
         this.sprites = sprites;
@@ -37,12 +49,25 @@ public final class TileMap {
         this.rows = rows;
         this.bgTiles = new int[rows][cols];
         this.fgTiles = new int[rows][cols];
+        this.decorTiles = new int[rows][cols];
+        this.platformOverlay = new boolean[rows][cols];
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
-                bgTiles[r][c] = BG_WALL;
+                bgTiles[r][c] = EMPTY;
                 fgTiles[r][c] = EMPTY;
+                decorTiles[r][c] = EMPTY;
             }
         }
+    }
+
+    public void setTileset(String tilesetId) {
+        if (tilesetId != null && !tilesetId.isEmpty()) {
+            this.tilesetId = tilesetId;
+        }
+    }
+
+    public String getTilesetId() {
+        return tilesetId;
     }
 
     public static boolean isSolid(int tile) {
@@ -69,11 +94,37 @@ public final class TileMap {
         }
     }
 
+    public void setDecoration(int col, int row, int decorTile) {
+        if (col >= 0 && col < cols && row >= 0 && row < rows) {
+            decorTiles[row][col] = decorTile;
+        }
+    }
+
+    public void setPlatformOverlay(int col, int row, boolean active) {
+        if (col >= 0 && col < cols && row >= 0 && row < rows) {
+            platformOverlay[row][col] = active;
+        }
+    }
+
+    public boolean isPlatformOverlay(int col, int row) {
+        if (col >= 0 && col < cols && row >= 0 && row < rows) {
+            return platformOverlay[row][col];
+        }
+        return false;
+    }
+
     public int getForeground(int col, int row) {
         if (col >= 0 && col < cols && row >= 0 && row < rows) {
             return fgTiles[row][col];
         }
-        return WALL; // out-of-bounds is solid
+        return WALL;
+    }
+
+    public int getDecor(int col, int row) {
+        if (col >= 0 && col < cols && row >= 0 && row < rows) {
+            return decorTiles[row][col];
+        }
+        return EMPTY;
     }
 
     /**
@@ -93,7 +144,7 @@ public final class TileMap {
         int topRow = (int) Math.floor((e.getY() + eps) / t);
         int bottomRow = (int) Math.floor((e.getY() + h - eps) / t);
 
-        if (e.getVx() > 0) { // moving right
+        if (e.getVx() > 0) {
             for (int r = topRow; r <= bottomRow; r++) {
                 if (isSolid(getForeground(rightCol, r))) {
                     newX = rightCol * t - w;
@@ -101,7 +152,7 @@ public final class TileMap {
                     break;
                 }
             }
-        } else if (e.getVx() < 0) { // moving left
+        } else if (e.getVx() < 0) {
             for (int r = topRow; r <= bottomRow; r++) {
                 if (isSolid(getForeground(leftCol, r))) {
                     newX = (leftCol + 1) * t;
@@ -119,16 +170,16 @@ public final class TileMap {
         bottomRow = (int) Math.floor((newY + h - eps) / t);
 
         boolean ground = false;
-        if (e.getVy() >= 0) { // falling or resting on surface
+        if (e.getVy() >= 0) {
             for (int c = leftCol; c <= rightCol; c++) {
                 int tile = getForeground(c, bottomRow);
+                boolean oneWay = isOneWayPlatform(tile) || isPlatformOverlay(c, bottomRow);
                 if (isSolid(tile)) {
                     newY = bottomRow * t - h;
                     e.setVelocity(e.getVx(), 0);
                     ground = true;
                     break;
-                } else if (isOneWayPlatform(tile) && !dropThrough) {
-                    // One-way platform: only land if feet crossed from above
+                } else if (oneWay && !dropThrough) {
                     double oldFoot = e.getY() + h;
                     double platformTop = bottomRow * t;
                     if (oldFoot <= platformTop + 6) {
@@ -139,14 +190,14 @@ public final class TileMap {
                     }
                 }
             }
-            // Ground support probe when velocity was already zeroed
             if (!ground) {
                 int supportRow = (int) Math.floor((newY + h + 0.02) / t);
                 double surfaceY = supportRow * t;
                 if (Math.abs((newY + h) - surfaceY) <= 0.05) {
                     for (int c = leftCol; c <= rightCol; c++) {
                         int tile = getForeground(c, supportRow);
-                        if (isSolid(tile) || (isOneWayPlatform(tile) && !dropThrough)) {
+                        boolean oneWay = isOneWayPlatform(tile) || isPlatformOverlay(c, supportRow);
+                        if (isSolid(tile) || (oneWay && !dropThrough)) {
                             newY = surfaceY - h;
                             e.setVelocity(e.getVx(), 0);
                             ground = true;
@@ -155,7 +206,7 @@ public final class TileMap {
                     }
                 }
             }
-        } else { // jumping up (vy < 0)
+        } else {
             for (int c = leftCol; c <= rightCol; c++) {
                 if (isSolid(getForeground(c, topRow))) {
                     newY = (topRow + 1) * t;
@@ -198,12 +249,30 @@ public final class TileMap {
             for (int c = c0; c <= c1; c++) {
                 int bg = bgTiles[r][c];
                 if (bg >= 0) {
-                    g.drawImage(sprites.tile(bg), c * t - camX, r * t - camY, null);
+                    g.drawImage(sprites.tile(tilesetId, bg), c * t - camX, r * t - camY, null);
                 }
             }
         }
     }
 
+    public void renderDecorations(Graphics2D g, int camX, int camY) {
+        int t = Constants.TILE;
+        int c0 = Math.max(0, camX / t);
+        int c1 = Math.min(cols - 1, (camX + Constants.VIEW_W) / t + 1);
+        int r0 = Math.max(0, camY / t);
+        int r1 = Math.min(rows - 1, (camY + Constants.VIEW_H) / t + 1);
+
+        for (int r = r0; r <= r1; r++) {
+            for (int c = c0; c <= c1; c++) {
+                int dec = decorTiles[r][c];
+                if (dec >= 0) {
+                    g.drawImage(sprites.tile(tilesetId, dec), c * t - camX, r * t - camY, null);
+                }
+            }
+        }
+    }
+
+    /** Renders foreground tiles with neighbor-aware autotiling and deterministic variation. */
     public void renderForeground(Graphics2D g, int camX, int camY) {
         int t = Constants.TILE;
         int c0 = Math.max(0, camX / t);
@@ -215,10 +284,40 @@ public final class TileMap {
             for (int c = c0; c <= c1; c++) {
                 int fg = fgTiles[r][c];
                 if (fg >= 0) {
-                    g.drawImage(sprites.tile(fg), c * t - camX, r * t - camY, null);
+                    int renderTile = resolveAutotile(c, r, fg);
+                    g.drawImage(sprites.tile(tilesetId, renderTile), c * t - camX, r * t - camY, null);
                 }
             }
         }
+    }
+
+    private int resolveAutotile(int c, int r, int baseTile) {
+        int h = Math.abs((c * 73856093) ^ (r * 19349663));
+        boolean upSolid = (r > 0) && isSolid(fgTiles[r - 1][c]);
+        boolean leftSolid = (c > 0) && isSolid(fgTiles[r][c - 1]);
+        boolean rightSolid = (c < cols - 1) && isSolid(fgTiles[r][c + 1]);
+
+        if (baseTile == FLOOR) {
+            if (!upSolid) {
+                if (!leftSolid) return 12;
+                if (!rightSolid) return 13;
+                int m = h % 5;
+                if (m == 0) return 10;
+                if (m == 1) return 11;
+                return 1;
+            }
+            return (h % 3 == 0) ? 15 : 2;
+        }
+        if (baseTile == WALL) {
+            if (!upSolid && r > 1) {
+                return (h % 3 == 0) ? 10 : 1;
+            }
+            return (h % 4 == 0) ? 14 : 0;
+        }
+        if (baseTile == COBBLE) {
+            return (h % 3 == 0) ? 15 : 2;
+        }
+        return baseTile;
     }
 
     public int getPixelWidth() { return cols * Constants.TILE; }
