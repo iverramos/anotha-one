@@ -159,6 +159,8 @@ public final class InputHandler extends MouseAdapter {
 
     public int getMouseX() { return mouseX; }
     public int getMouseY() { return mouseY; }
+    public int getWorldMouseX() { return mouseX / utilities.Constants.UI_SCALE; }
+    public int getWorldMouseY() { return mouseY / utilities.Constants.UI_SCALE; }
 
     public boolean isLeftDown() { return mouseLeftDown || down[Action.ATTACK.ordinal()]; }
     public boolean wasLeftPressed() { return mouseLeftPressed || pressed[Action.ATTACK.ordinal()]; }

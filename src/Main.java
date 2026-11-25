@@ -33,7 +33,7 @@ public final class Main {
             @Override public void actionPerformed(ActionEvent e) { toggleFullscreen(); }
         });
 
-        frame = new JFrame(Constants.TITLE + " - Dungreed-Inspired Action Roguelite");
+        frame = new JFrame(Constants.TITLE + " - " + Constants.SUBTITLE);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setContentPane(panel);
         frame.pack();

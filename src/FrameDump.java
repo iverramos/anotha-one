@@ -21,7 +21,7 @@ public final class FrameDump {
         game.render(r.begin());
         r.end();
         BufferedImage src = r.snapshot();
-        int s = 3;
+        int s = 1;
         BufferedImage out = new BufferedImage(src.getWidth() * s, src.getHeight() * s, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = out.createGraphics();
         g.drawImage(src, 0, 0, out.getWidth(), out.getHeight(), null);

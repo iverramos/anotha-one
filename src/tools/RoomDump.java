@@ -47,23 +47,26 @@ public final class RoomDump {
             Graphics2D g = r.begin();
             // Background
             g.setColor(new Color(0x0e1017));
-            g.fillRect(0, 0, Constants.VIEW_W, Constants.VIEW_H);
+            g.fillRect(0, 0, Constants.UI_W, Constants.UI_H);
 
             int camX = Math.max(0, Math.min(room.getMap().getPixelWidth() - Constants.VIEW_W, (int) p.getCenterX() - Constants.VIEW_W / 2));
             int camY = 0;
 
+            java.awt.geom.AffineTransform oldTx = g.getTransform();
+            g.scale(Constants.UI_SCALE, Constants.UI_SCALE);
             room.render(g, camX, camY, p.getCenterX(), p.getCenterY());
             for (entities.Enemy e : room.getEnemies()) e.render(g, camX, camY);
             p.render(g, camX, camY);
+            g.setTransform(oldTx);
 
             // HUD
             ui.HUD hud = new ui.HUD(sprites);
-            hud.render(g, p, d, 240, 135);
+            hud.render(g, p, d, Constants.UI_W / 2, Constants.UI_H / 2);
 
             r.end();
             BufferedImage src = r.snapshot();
 
-            int scale = 2;
+            int scale = 1;
             BufferedImage out = new BufferedImage(src.getWidth() * scale, src.getHeight() * scale, BufferedImage.TYPE_INT_RGB);
             Graphics2D og = out.createGraphics();
             og.drawImage(src, 0, 0, out.getWidth(), out.getHeight(), null);
