@@ -778,9 +778,9 @@ public final class AssetGenerator {
         im.setRGB(ox8 + 15, 5, GOLD_HI);
         // Halberd axe blade + spearhead
         for (int i = 0; i < 5; i++) {
-            im.setRGB(ox8 + 18 + i, 4 - i, STEEL_HI);
-            im.setRGB(ox8 + 15 + i, 3, GOLD_HI);
-            im.setRGB(ox8 + 14, 3 - i, STEEL_LIGHT);
+            setPixel(im, ox8 + 18 + i, 4 - i, STEEL_HI);
+            setPixel(im, ox8 + 15 + i, 3, GOLD_HI);
+            setPixel(im, ox8 + 14, 3 - i, STEEL_LIGHT); // y goes 3..−1; setPixel guards negative y
         }
         im.setRGB(ox8 + 17, 2, PURE_WHITE); // spear tip
         im.setRGB(ox8 + 13, 2, CYAN_HI); // electric spark
